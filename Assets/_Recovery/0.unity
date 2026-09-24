@@ -368,7 +368,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.89900005, z: 0.328}
+  m_LocalPosition: {x: 0, y: 0.89900005, z: 0.15899992}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -790,9 +790,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5747274333084458480, guid: ffde91377b3cf46139d3beac2454c6c0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 949791067}
-    - targetCorrespondingSourceObject: {fileID: 5747274333084458480, guid: ffde91377b3cf46139d3beac2454c6c0, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 949791068}
   m_SourcePrefab: {fileID: 100100000, guid: ffde91377b3cf46139d3beac2454c6c0, type: 3}
 --- !u!4 &949791065 stripped
 Transform:
@@ -826,18 +823,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &949791068
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 949791066}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbea25d41f9304e1997459e5429ded23, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Weapon
 --- !u!1 &1172949625
 GameObject:
   m_ObjectHideFlags: 0
@@ -1342,7 +1327,6 @@ MonoBehaviour:
   jumpForce: 7.5
   dashSpeed: 13
   dashDuration: 0.2
-  attackCoolTime: 0.5
   playerCamera: {fileID: 330585545}
   lookUpDownLimit: 30
   animator: {fileID: 949791067}

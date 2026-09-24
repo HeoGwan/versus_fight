@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,20 +10,50 @@ public class PlayerController : MonoBehaviour
     {
         Idle,
         Move,
+        // Attack,
+        // Jump,
     };
 
     // 변수
     Rigidbody _rigid;
+
     State _state = State.Idle;
+    // State _prevState = State.Idle;
     Vector3 _direction = Vector3.zero;
+    float velocity = 0.0f;
+
+    [Header("Variables")]
     [SerializeField] float speed = 5f;
 
+    [Space(10)]
+    bool isJumping = false;
+    [SerializeField] float jumpForce = 5f;
+
+    [Space(10)]
+    [SerializeField] float dashSpeed = 10f;
+    [SerializeField] float dashDuration = 0.25f;
+
+    [Space(10)]
+    bool isAttacking = false;
+    [SerializeField] private float attackCoolTime = 0.5f;
+
+    [Header("Components")]
+    [Space(10)]
     [SerializeField] Camera playerCamera;
     [SerializeField] float lookUpDownLimit = 60f; // 위아래 회전 각도
+
+    [Space(10)]
+    [SerializeField] private Animator animator;
 
     void Start()
     {
         _rigid = GetComponent<Rigidbody>();
+
+        // 1. 커서를 화면 중앙에 고정합니다.
+        Cursor.lockState = CursorLockMode.Locked;
+
+        // 2. 커서를 보이지 않게 숨깁니다.
+        Cursor.visible = false;
     }
 
     void LateUpdate()
@@ -32,8 +64,45 @@ public class PlayerController : MonoBehaviour
             // transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(_direction), Time.deltaTime * 10f);
             transform.Translate(_direction * speed * Time.deltaTime);
         }
+        // else if (_state == State.Jump)
+        // {
+        //     float gravity = _rigid.linearVelocity.y < 0 ? 9.8f : -9.8f;
+    
+        //     velocity -= gravity * Time.deltaTime;
+
+        //     Vector3 position = transform.position;
+        //     position.y += velocity;
+
+        //     _direction.y = position.y;
+
+        //     transform.Translate(_direction * speed * Time.deltaTime);
+
+        //     // transform.SetPositionAndRotation(position, transform.rotation);
+
+        //     // // y 값이 0이하(떨어질 떄) y에 9.8(중력 가속도)를 곱하여 더함
+        //     // if (_rigid.linearVelocity.y < 0)
+        //     // {
+        //     //     Vector3 fallVelocity = new Vector3(0, _rigid.linearVelocity.y * 9.8f * Time.deltaTime, 0);
+                
+        //     //     _rigid.linearVelocity += fallVelocity;
+        //     // }
+        //     // else
+        //     // {
+                
+        //     // }
+        // }
     }
 
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Floor"))
+        {
+            isJumping = false;
+        }
+    }
+
+
+    // Player Input 메서드
     void OnMove(InputValue value)
     {
         // 이동 처리
@@ -48,19 +117,28 @@ public class PlayerController : MonoBehaviour
 
     void OnJump(InputValue value)
     {
-        if (value.isPressed)
+        if (value.isPressed && !isJumping)
         {
-            
-            _rigid.AddForce(Vector3.up * 5f, ForceMode.Impulse);
+            // _rigid.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            isJumping = true;
+            velocity = jumpForce;
+            StartCoroutine(JumpCoroutine());
+            // _state = State.Dash;
         }
     }
 
     void OnAttack(InputValue value)
     {
-        if (value.isPressed)
+        if (value.isPressed && !isAttacking)
         {
             // 공격 처리
-            Debug.Log("Attack!");
+            // 대쉬 처리
+            // _rigid.AddForce(transform.forward * dashSpeed, ForceMode.Impulse);
+            // _prevState = _state;
+            // _state = State.Attack;
+            isAttacking = true;
+            animator.SetTrigger("Attack");
+            StartCoroutine(AttackCoroutine());
         }
     }
 
@@ -97,5 +175,72 @@ public class PlayerController : MonoBehaviour
                 playerCamera.transform.localEulerAngles = new Vector3(maxLookLimit, currentRotation.y, currentRotation.z);
             }
         }
+    }
+
+
+    // Public 메서드
+    public void EndAttack()
+    {
+        float time = 0.0f;
+        
+        while (time < attackCoolTime)
+        {
+            time += Time.deltaTime;
+        }
+
+        isAttacking = false;
+    }
+
+
+    // Coroutine 메서드
+    IEnumerator AttackCoroutine()
+    {
+        float elapsedTime = 0f;
+        float moveWay = _direction.z == 0 ? 1 : _direction.z;
+
+        while (elapsedTime < dashDuration)
+        {
+            _rigid.linearVelocity = dashSpeed * moveWay * transform.forward;
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        _rigid.linearVelocity = Vector3.zero;
+
+        // _state = _prevState;
+    }
+
+    IEnumerator JumpCoroutine()
+    {
+        // float gravity = _rigid.linearVelocity.y < 0 ? 9.8f : -9.8f;
+    
+        Vector3 position = Vector3.zero;
+
+        while (isJumping)
+        {
+            velocity -= 9.8f * Time.deltaTime;
+            Debug.Log($"velocity : {velocity}");
+
+            position.y = velocity;
+
+            transform.Translate(position * Time.deltaTime);
+            // transform.SetPositionAndRotation(position, transform.rotation);
+
+            yield return null;
+        }
+
+        // transform.SetPositionAndRotation(position, transform.rotation);
+
+        // // y 값이 0이하(떨어질 떄) y에 9.8(중력 가속도)를 곱하여 더함
+        // if (_rigid.linearVelocity.y < 0)
+        // {
+        //     Vector3 fallVelocity = new Vector3(0, _rigid.linearVelocity.y * 9.8f * Time.deltaTime, 0);
+            
+        //     _rigid.linearVelocity += fallVelocity;
+        // }
+        // else
+        // {
+            
+        // }
     }
 }
