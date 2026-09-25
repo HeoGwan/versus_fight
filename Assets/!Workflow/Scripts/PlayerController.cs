@@ -1,41 +1,49 @@
+using System;
 using System.Collections;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
+    [Serializable]
     enum State
     {
         Idle,
-        Move,
+        Walk,
         // Attack,
         // Jump,
+        Run,
     };
 
     // 변수
     Rigidbody _rigid;
 
-    State _state = State.Idle;
+    [SerializeField] State _state = State.Idle;
     // State _prevState = State.Idle;
     Vector3 _direction = Vector3.zero;
     float velocity = 0.0f;
 
     [Header("Variables")]
-    [SerializeField] float speed = 5f;
+    [SerializeField] float speed = 0.0f;
+    [SerializeField] float walkSpeed = 5f;
+    float runTime = 0.0f;
+    [SerializeField] float runDuration = 2f;
+    [SerializeField] float runSpeedMultiple = 1.75f;
+    [SerializeField] float sprintSpeedMultiple = 3f;
+    bool isSprinting = false;
 
     [Space(10)]
-    bool isJumping = false;
     [SerializeField] float jumpForce = 5f;
+    bool isJumping = false;
 
     [Space(10)]
     [SerializeField] float dashSpeed = 10f;
     [SerializeField] float dashDuration = 0.25f;
 
     [Space(10)]
-    bool isAttacking = false;
     [SerializeField] private float attackCoolTime = 0.5f;
+    bool isAttacking = false;
 
     [Header("Components")]
     [Space(10)]
@@ -54,43 +62,31 @@ public class PlayerController : MonoBehaviour
 
         // 2. 커서를 보이지 않게 숨깁니다.
         Cursor.visible = false;
+
+        speed = walkSpeed;
     }
 
     void LateUpdate()
     {
-        if (_state == State.Move)
+        if (_state == State.Walk && !isSprinting)
         {
-            // // 부드럽게 회전하도록 보간
-            // transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(_direction), Time.deltaTime * 10f);
+            // 걷는 것에서 살짝 달리는 것으로 변경
+            runTime += Time.deltaTime;
+
+            if (runTime >= runDuration)
+            {
+                _state = State.Run;
+                speed = walkSpeed * runSpeedMultiple;
+                runTime = 0.0f;
+            }
+        }
+
+        // 일단 State가 Idle 혹은 움직이는 것(Walk, Run, Sprint) 밖에 없으므로 
+        // Idle이 아닌 경우는 전부 움직이도록 설정함
+        if (_state != State.Idle)
+        {
             transform.Translate(_direction * speed * Time.deltaTime);
         }
-        // else if (_state == State.Jump)
-        // {
-        //     float gravity = _rigid.linearVelocity.y < 0 ? 9.8f : -9.8f;
-    
-        //     velocity -= gravity * Time.deltaTime;
-
-        //     Vector3 position = transform.position;
-        //     position.y += velocity;
-
-        //     _direction.y = position.y;
-
-        //     transform.Translate(_direction * speed * Time.deltaTime);
-
-        //     // transform.SetPositionAndRotation(position, transform.rotation);
-
-        //     // // y 값이 0이하(떨어질 떄) y에 9.8(중력 가속도)를 곱하여 더함
-        //     // if (_rigid.linearVelocity.y < 0)
-        //     // {
-        //     //     Vector3 fallVelocity = new Vector3(0, _rigid.linearVelocity.y * 9.8f * Time.deltaTime, 0);
-                
-        //     //     _rigid.linearVelocity += fallVelocity;
-        //     // }
-        //     // else
-        //     // {
-                
-        //     // }
-        // }
     }
 
     void OnCollisionEnter(Collision collision)
@@ -108,11 +104,36 @@ public class PlayerController : MonoBehaviour
         // 이동 처리
         Vector2 move = value.Get<Vector2>();
 
-        if (move == null) return;
+        if (move == null || move == Vector2.zero)
+        {
+            _state = State.Idle;
+            speed = walkSpeed;
+            return;
+        }
 
-        _state = move == Vector2.zero ? State.Idle : State.Move;
+        if (_state == State.Idle) _state = State.Walk;
+
+        // _state = move == Vector2.zero ? State.Idle : State.Move;
 
         _direction = new Vector3(move.x, 0, move.y);
+    }
+
+    void OnSprint(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            speed = walkSpeed * sprintSpeedMultiple;
+            isSprinting = true;
+            Debug.Log("Sprint");
+        }
+        else
+        {
+            Debug.Log("Sprint Release");
+            if (_state == State.Run) speed = walkSpeed * runSpeedMultiple;
+            else speed = walkSpeed;
+            isSprinting = false;
+            runTime = 0.0f;
+        }
     }
 
     void OnJump(InputValue value)
