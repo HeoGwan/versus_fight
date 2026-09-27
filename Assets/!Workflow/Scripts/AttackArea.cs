@@ -6,7 +6,7 @@ public class AttackArea : MonoBehaviour
     {
         if (!other.CompareTag("Entity")) return;
 
-        Entity entity = other.GetComponent<Entity>();
-        entity.Hit();
+        Entity entity = other.GetComponentInParent<Entity>();
+        entity.Hit(transform.position);
     }
 }

@@ -40,11 +40,11 @@ public class PlayerController : MonoBehaviour
 
     [Space(10)]
     [SerializeField] float dashSpeed = 10f;
-    [SerializeField] float dashDuration = 0.25f;
 
     [Space(10)]
     [SerializeField] private float attackCoolTime = 0.5f;
     bool isAttacking = false;
+    [SerializeField] float attackDuration = 0.0f;
 
     [Header("Components")]
     [Space(10)]
@@ -53,6 +53,8 @@ public class PlayerController : MonoBehaviour
 
     [Space(10)]
     [SerializeField] private Animator animator;
+    [SerializeField] private AnimationClip attackClip;
+    float attackClipFrameRate;
 
     [Space(10)]
     [SerializeField] private BoxCollider attackArea;
@@ -72,6 +74,10 @@ public class PlayerController : MonoBehaviour
 
         // 공격 범위는 비활성화한다.
         attackArea.enabled = false;
+
+        // 공격 애니메이션 설정
+        attackClipFrameRate = attackClip.frameRate;
+        attackDuration = attackClip.length;
     }
 
     void LateUpdate()
@@ -252,12 +258,20 @@ public class PlayerController : MonoBehaviour
         // 공격이 진행되는 시간 설정
         float elapsedTime = 0f;
         // 공격 방향(앞, 뒤로 움직이는 방향) 확인
+        Vector3 position = Vector3.zero;
         float moveWay = _direction.z == 0 ? 1 : _direction.z;
+        float dashVelocity = dashSpeed * moveWay;
 
         // 공격 시 기본 대쉬 진행
-        while (elapsedTime < dashDuration)
+        while (isAttacking)
         {
-            _rigid.linearVelocity = dashSpeed * moveWay * transform.forward;
+            // V = V_0(1 - t) : 마찰력 (선형 감소)
+            dashVelocity = dashSpeed * (1 - (elapsedTime / attackDuration));
+
+            position.z = dashVelocity;
+
+            transform.Translate(position * Time.deltaTime);
+
             elapsedTime += Time.deltaTime;
             yield return null;
         }
