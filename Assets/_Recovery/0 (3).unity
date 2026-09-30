@@ -4303,7 +4303,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 873153705}
         m_TargetAssemblyTypeName: NetworkManagerExtern, Assembly-CSharp
-        m_MethodName: DoServer
+        m_MethodName: SetServer
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
