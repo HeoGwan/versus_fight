@@ -15,13 +15,36 @@ public class Entity : MonoBehaviour
     WaitForSecondsRealtime waitInvincible;
 
     [Space(10)]
+    [SerializeField] float walkSpeed = 5f;
+
+    [Space(10)]
     [SerializeField] private ParticleSystem hitParticle;
+
+    private Vector3 targetPosition;
+    private Quaternion targetRotation;
 
     void Start()
     {
         _animator = GetComponent<Animator>();
         _rigid = GetComponent<Rigidbody>();
+
+        _animator.enabled = true;
         waitInvincible = new WaitForSecondsRealtime(invincibleDuration);
+    }
+
+    void Update()
+    {
+        transform.position = Vector3.Slerp(
+            transform.position,
+            targetPosition,
+            walkSpeed * Time.deltaTime
+        );
+        
+        transform.rotation = Quaternion.Lerp(
+            transform.rotation,
+            targetRotation,
+            walkSpeed * Time.deltaTime
+        );
     }
 
     public void Hit(Vector3 attackAreaPosition)
@@ -41,6 +64,12 @@ public class Entity : MonoBehaviour
 
         // 무적 시간
         StartCoroutine(Invincible());
+    }
+
+    public void Move(Vector3 position, Quaternion rotation)
+    {
+        targetPosition = position;
+        targetRotation = rotation;
     }
 
     // 무적 코루틴

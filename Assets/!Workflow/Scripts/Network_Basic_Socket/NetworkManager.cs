@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Net.Security;
 using System.Data.SqlTypes;
 using System;
+using System.Collections.Generic;
+using System.Xml.XPath;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -69,6 +71,8 @@ public class NetworkManager : MonoBehaviour
     {
         None = 0,
         Connect = 1,
+        Initialize = 2,
+        Move = 3,
         DisConnect = 5,
     }
 
@@ -84,9 +88,12 @@ public class NetworkManager : MonoBehaviour
         public float rotX;     // 4
         public float rotY;     // 4
         public float rotZ;     // 4
-    }  // 29 bytes
+        public float rotW;     // 4
+    }  // 33 bytes
+    private const uint PACKET_SIZE = 33;
 
     private const int PORT = 7777;
+    private const uint MAX_PLAYER = 2;
 
     private UdpClient server;
     private UdpClient client;
@@ -105,15 +112,32 @@ public class NetworkManager : MonoBehaviour
 
     EntityPacket _packet;
 
+    [Space(10)]
+    [SerializeField] private GameObject playerObj;
+    [SerializeField] private GameObject enemyObj;
+
+    [Header("UI")]
+    [SerializeField] private Canvas startCanvas;
+    [SerializeField] private Camera startCamera;
+
+    // 오브젝트(엔티티)를 저장함
+    GameObject[] entities;
+
     void Start()
     {
         _packet = new EntityPacket();
         _packet.packetType = PacketType.None; 
+
+        entities = new GameObject[(int)MAX_PLAYER + 1];
+
         myEntityId = -1;
     }
 
     void Update()
     {
+        // 서버는 클라이언트에게 패킷을 받았을 때 반응하면 됨
+        if (isServer) return;
+
         if (isConnecting)
         {
             _time += Time.deltaTime;
@@ -121,6 +145,7 @@ public class NetworkManager : MonoBehaviour
             while (_time > _networkInterval)
             {
                 // 포지션 전달
+                MovePosition();
                 _time = 0.0f;
             }
         }
@@ -146,10 +171,17 @@ public class NetworkManager : MonoBehaviour
 
         // entityId를 저장함
         myEntityId = entityId++;
-        _packet.entityId = entityId;
 
         // 내가 서버인 것을 저장함
         isServer = true;
+
+        // 서버로 설정한 플레이어가 맨 처음 소환된다.
+        Debug.Log($"myEntityId : {myEntityId}");
+        entities[myEntityId] = Instantiate(playerObj, new Vector3(0, 0.2f, -7.1f), Quaternion.identity);
+
+        // 테스트를 위한 캔버스 및 카메라 비활성화
+        startCanvas.gameObject.SetActive(false);
+        startCamera.gameObject.SetActive(false);
 
         // 서버만 열어놓고 응답을 기다린다.
         _ = ReceiveLoop();
@@ -171,6 +203,10 @@ public class NetworkManager : MonoBehaviour
 
         // 내가 서버가 아닌 것을 알림
         isServer = false;
+
+        // 캔버스 및 카메라 비활성화
+        startCanvas.gameObject.SetActive(false);
+        startCamera.gameObject.SetActive(false);
 
         // 연결이 완료됨을 전달하기 위해 packetType을 Connect로 변경함
         _packet.packetType = PacketType.Connect;
@@ -195,83 +231,130 @@ public class NetworkManager : MonoBehaviour
 
             EntityPacket recvPacket = Deserialize(result.Buffer);
 
-            // 만약 서버라면 
-            if (isServer)
+            // 연결 진행
+            if (recvPacket.packetType == PacketType.Connect)
             {
-                Debug.Log("Receive from client");
-                // 아무것도 연결되어 있지 않았던 상태라면 연결 상태로 변경
-                if (!isConnecting) isConnecting = true;
+                // 만약 서버라면 
+                if (isServer)
+                {
+                    // PacketType이 Connect인 클라이언트에게 접속 요청을 받음
+                    // 아무것도 연결되어 있지 않았던 상태라면 연결 상태로 변경
+                    if (!isConnecting) isConnecting = true;
 
-                // 일단 모든 클라이언트에게 연결됨을 알리는 패킷 전송
-                EntityPacket packet = new EntityPacket();
-                packet.packetType = PacketType.Connect; // 연결 완료를 알림
-                packet.entityId = entityId++; // 클라이언트의 id를 넘겨줌
+                    // 일단 모든 클라이언트에게 연결됨을 알리는 패킷 전송
+                    EntityPacket packet = new EntityPacket();
+                    packet.packetType = PacketType.Connect; // 연결 완료를 알림
+                    packet.entityId = entityId++; // 클라이언트의 id를 넘겨줌
 
-                byte[] sendPacket = Serialize(packet);
+                    // 서버 플레이어의 위치와 회전 정보를 패킷에 담아 전달함
+                    GameObject entity = entities[myEntityId];
+                    SetObjectPositionAndRotation(ref packet, entity);
 
-                server.Send(sendPacket, sendPacket.Length, result.RemoteEndPoint);
-            }
-            // 클라이언트라면
-            else
-            {
-                if (recvPacket.packetType == PacketType.Connect)
+                    byte[] sendPacket = Serialize(packet);
+
+                    // 클라이언트에게 초기화 하라고 전송함
+                    server.Send(sendPacket, sendPacket.Length, result.RemoteEndPoint);
+                }
+                // 클라이언트라면
+                else
                 {
                     if (isConnecting) continue; // 이미 연결된 경우 무시함
+
                     // 연결 되었을 경우 플래그 변경
                     isConnecting = true;
 
                     // id 저장
                     myEntityId = recvPacket.entityId;
+
+                    // 자신의 오브젝트를 생성함
+                    entities[myEntityId] = Instantiate(playerObj, new Vector3(0, 0.2f, 0), new Quaternion(0, 180f, 0, 1));
+
+                    // 그 후 자신의 오브젝트를 서버에게 보내 초기화(소환)하라고 요청한다
+                    _packet.packetType = PacketType.Initialize;
+                    _packet.entityId = myEntityId;
+                    SetObjectPositionAndRotation(ref _packet, entities[myEntityId]);
+
+                    byte[] sendPacket = Serialize(_packet);
+
+                    client.Send(sendPacket, sendPacket.Length, "127.0.0.1", PORT);
+
+                    // 이후에는 패킷 타입을 Move로 바꾼다.
+                    _packet.packetType = PacketType.Move;
                 }
             }
+            else if (recvPacket.packetType == PacketType.Initialize)
+            {
+                if (isServer)
+                {
+                    // 클라이언트의 위치를 기반으로 오브젝트 생성
+                    Vector3 enemyPos = GetObjectPosition(recvPacket);
+                    Quaternion enemyRot = GetObjectRotation(recvPacket);
 
-            // // 연결이 되지 않았을 경우에는 연결 확인을 진행함
-            // if (!isConnecting)
-            // {
-            //     if (recvPacket.packetType == PacketType.Connect)
-            //     {
-            //         // 연결이 완료됨을 플래그로 알림
-            //         isConnecting = true;
+                    entities[recvPacket.entityId] = Instantiate(enemyObj, enemyPos, enemyRot);
 
-            //         // 만약 서버라면 여기서 종료
-            //         if (isServer) 
-            //         {
-            //             // 연결이 완료되었다는 것을 알림 (클라이언트가 서버로 보내는 것)
-            //             _packet.packetType = PacketType.Connect;
+                    // 자신의 위치와 회전 정보를 알려줌
+                    _packet.packetType = PacketType.Initialize;
+                    _packet.entityId = myEntityId;
+                    SetObjectPositionAndRotation(ref _packet, entities[myEntityId]);
 
-            //             byte[] p = Serialize(_packet);
+                    // 클라이언트에게 자신의 정보를 기반으로 초기화하라고 전송함
+                    byte[] sendPacket = Serialize(_packet);
+                    server.Send(sendPacket, sendPacket.Length, result.RemoteEndPoint);
+                }
+                else
+                {
+                    // 서버의 위치를 받은 클라이언트는 서버의 오브젝트를 생성하고 접속 로직은 종료됨
+                    Vector3 enemyPos = GetObjectPosition(recvPacket);
+                    Quaternion enemyRot = GetObjectRotation(recvPacket);
 
-            //             udp.Send(p, p.Length, endPoint);
+                    entities[recvPacket.entityId] = Instantiate(enemyObj, enemyPos, enemyRot);
+                }
+            }
+            else if (recvPacket.packetType == PacketType.Move)
+            {
+                if (isServer)
+                {
+                    if (myEntityId == recvPacket.entityId) continue;
 
-            //             continue;
-            //         }
+                    if (_packet.packetType != PacketType.Move) _packet.packetType = PacketType.Move;
 
-            //         // 클라이언트라면 전달받은 entityId로 myEntityId를 저장함
-            //         myEntityId = recvPacket.entityId;
+                    // 클라이언트의 이동 정보를 업데이트 함
+                    Vector3 pos = GetObjectPosition(recvPacket);
+                    Quaternion rot = GetObjectRotation(recvPacket);
 
-            //         // 연결이 완료되었다는 것을 알림 (클라이언트가 서버로 보내는 것)
-            //         _packet.packetType = PacketType.Connect;
+                    // Debug.Log($"client rotation : {rot.x}, {rot.y}, {rot.z}, {rot.w}");
+                    // Debug.Log($"client rotation : {rot.eulerAngles}");
 
-            //         byte[] packet = Serialize(_packet);
+                    Entity entity = entities[recvPacket.entityId].GetComponent<Entity>();
+                    entity.Move(pos, rot);
 
-            //         udp.Send(packet, packet.Length, endPoint);
-            //     }
-            // }
+                    // 자신의 정보를 클라이언트에게 전송함
+                    SetObjectPositionAndRotation(ref _packet, entities[myEntityId]);
 
-            // Position = ParsePosition(result.Buffer);
+                    byte[] sendPacket = Serialize(_packet);
+
+                    server.Send(sendPacket, sendPacket.Length, result.RemoteEndPoint);
+                }
+                else
+                {
+                    // 현재 내 아이디와 패킷의 아이디가 같다면 무시함
+                    if (myEntityId == recvPacket.entityId) continue;
+
+                    // 서버 오브젝트의 이동 정보를 갱신함
+                    Vector3 pos = new Vector3(recvPacket.x, recvPacket.y, recvPacket.z);
+                    Quaternion rot = new Quaternion(recvPacket.rotX, recvPacket.rotY, recvPacket.rotZ, recvPacket.rotW);
+
+                    Entity entity = entities[recvPacket.entityId].GetComponent<Entity>();
+                    entity.Move(pos, rot);
+                }
+            }
         }
-    }
-
-    Vector3 ParsePosition(byte[] bytes)
-    {
-        Vector3 result = new Vector3(bytes[1], bytes[2], bytes[3]);
-        return result;
     }
 
     // EntityPacket -> byte[]
     byte[] Serialize(EntityPacket p)
     {
-        byte[] data = new byte[29];
+        byte[] data = new byte[PACKET_SIZE];
 
         data[0] = (byte)p.packetType;
 
@@ -284,6 +367,7 @@ public class NetworkManager : MonoBehaviour
         Buffer.BlockCopy(BitConverter.GetBytes(p.rotX), 0, data, 17, 4);
         Buffer.BlockCopy(BitConverter.GetBytes(p.rotY), 0, data, 21, 4);
         Buffer.BlockCopy(BitConverter.GetBytes(p.rotZ), 0, data, 25, 4);
+        Buffer.BlockCopy(BitConverter.GetBytes(p.rotW), 0, data, 29, 4);
 
         return data;
     }
@@ -303,7 +387,8 @@ public class NetworkManager : MonoBehaviour
 
             rotX = BitConverter.ToSingle(data, 17),
             rotY = BitConverter.ToSingle(data, 21),
-            rotZ = BitConverter.ToSingle(data, 25)
+            rotZ = BitConverter.ToSingle(data, 25),
+            rotW = BitConverter.ToSingle(data, 29),
         };
 
         return result;
@@ -315,8 +400,57 @@ public class NetworkManager : MonoBehaviour
         style.fontSize = 30;
         style.normal.textColor = Color.black;
 
-        GUI.Label(new Rect(10, 10, 100, 100), $"my id : {myEntityId}", style);
+        GUI.Label(new Rect(10, 10, 300, 100), $"my id : {myEntityId}", style);
         
         GUI.Label(new Rect(200, 10, 500, 100), $"isServer : {isServer}", style);
+
+        GUI.Label(new Rect(200, 50, 500, 100), $"isConnecting : {isConnecting}", style);
+    }
+
+    // 위치 전달
+    private void MovePosition()
+    {
+        // 패킷 종류를 Move로 변경함
+        _packet.packetType = PacketType.Move;
+
+        // 내 엔티티 ID를 저장함
+        _packet.entityId = myEntityId;
+
+        // 현재 player의 위치와 회전 정보를 담음
+        SetObjectPositionAndRotation(ref _packet, entities[myEntityId]);
+
+        Debug.Log($"rotation : {_packet.rotX}, {_packet.rotY}, {_packet.rotZ}, {_packet.rotW}");
+
+        // 패킷을 전송함
+        byte[] sendPacket = Serialize(_packet);
+
+        client.Send(sendPacket, sendPacket.Length, "127.0.0.1", PORT);
+    }
+
+    // 오브젝트의 위치 정보 및 회전 정보 저장
+    private void SetObjectPositionAndRotation(ref EntityPacket packet, GameObject obj)
+    {
+        // 위치 정보
+        packet.x = obj.transform.position.x;
+        packet.y = obj.transform.position.y;
+        packet.z = obj.transform.position.z;
+
+        // 회전 정보
+        packet.rotX = obj.transform.rotation.x;
+        packet.rotY = obj.transform.rotation.y;
+        packet.rotZ = obj.transform.rotation.z;
+        packet.rotW = obj.transform.rotation.w;
+    }
+
+    private Vector3 GetObjectPosition(EntityPacket packet)
+    {
+        Vector3 result = new Vector3(packet.x, packet.y, packet.z);
+        return result;
+    }
+
+    private Quaternion GetObjectRotation(EntityPacket packet)
+    {
+        Quaternion result = new Quaternion(packet.rotX, packet.rotY, packet.rotZ, packet.rotW);
+        return result;
     }
 }
