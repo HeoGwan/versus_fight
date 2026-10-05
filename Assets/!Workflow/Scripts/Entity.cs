@@ -34,13 +34,13 @@ public class Entity : MonoBehaviour
 
     void Update()
     {
-        transform.position = Vector3.Slerp(
+        transform.position = Vector3.Lerp(
             transform.position,
             targetPosition,
             walkSpeed * Time.deltaTime
         );
         
-        transform.rotation = Quaternion.Lerp(
+        transform.rotation = Quaternion.Slerp(
             transform.rotation,
             targetRotation,
             walkSpeed * Time.deltaTime
@@ -53,7 +53,8 @@ public class Entity : MonoBehaviour
         if (isInvincible) return;
 
         // 피격 방향 벡터를 얻음
-        Vector3 hitDirection = transform.position - attackAreaPosition;
+        // Vector3 hitDirection = transform.position - attackAreaPosition;
+        Vector3 hitDirection = Vector3.forward;
 
         // 피격 받은 쪽으로 넉백
         _rigid.AddForce(hitDirection * knockbackForce);
