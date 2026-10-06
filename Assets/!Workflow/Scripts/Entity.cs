@@ -30,6 +30,8 @@ public class Entity : MonoBehaviour
 
         _animator.enabled = true;
         waitInvincible = new WaitForSecondsRealtime(invincibleDuration);
+
+        targetPosition = transform.position;
     }
 
     void Update()

@@ -66,43 +66,47 @@ namespace VersusFight
                 var result = await udp.ReceiveAsync();
 
                 // 요청을 보낸 클라이언트의 정보 저장
-                remoteEndPoint = result.RemoteEndPoint;
+                remoteEndPoint = result.RemoteEndPoint;                
                 // 패킷 정보 저장
-                Packet recvPacket = Deserialize(result.Buffer);
+                Packet getPacket = PacketSerializer.DeserializePacket(result.Buffer);
                 // 패킷 종류 저장
-                PacketType packetType = recvPacket.packetType;
+                PacketType packetType = getPacket.packetType;
 
                 // 클라이언트 접속 진행
                 if (packetType == PacketType.Connect)
                 {
-                    Packet packet = new Packet()
-                    {
-                        packetType = PacketType.Connect,
-                        networkId = networkId++,
-                    };
+                    MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
+
+                    // 패킷 타입 설정
+                    packet.packetType = PacketType.Connect;
 
                     // 서버 플레이어의 위치 및 회전 정보 전달
+                    recvPacket.networkId = networkId++;
                     GameObject entity = entities[myNetworkId];
-                    SetObjectPositionAndRotation(ref packet, entity);
+                    SetObjectPositionAndRotation(ref recvPacket, entity);
+                    packet.data = PacketSerializer.SerializeMove(recvPacket);
 
                     // 클라이언트에게 접속 되었다고 알림
-                    SendPacket(packet);
-
+                    SendPacket();
                     isConnecting = true;
                 }
                 // 서버 초기화 진행
                 else if (packetType == PacketType.Initialize)
                 {
+                    MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
                     // 전달받은 클라이언트 위치 및 회전 정보를 기반으로 오브젝트 생성
                     Vector3 enemyPos = GetObjectPosition(recvPacket);
                     Quaternion enemyRot = GetObjectRotation(recvPacket);
-
                     entities[recvPacket.networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
 
                     // 클라이언트에게 자신의 위치 정보를 알려줌
                     packet.packetType = PacketType.Initialize;
-                    packet.networkId = myNetworkId;
-                    SetObjectPositionAndRotation(ref packet, entities[myNetworkId]);
+
+                    // 위치 정보 저장
+                    recvPacket.networkId = myNetworkId;
+                    GameObject entity = entities[myNetworkId];
+                    SetObjectPositionAndRotation(ref recvPacket, entity);
+                    packet.data = PacketSerializer.SerializeMove(recvPacket);
 
                     // 클라이언트에게 초기화 하라고 요청함
                     SendPacket();
@@ -110,9 +114,12 @@ namespace VersusFight
                 // 이동 진행
                 else if (packetType == PacketType.Move)
                 {
+                    MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
                     // 클라이언트의 이동 정보를 기반으로 업데이트 진행
                     Vector3 pos = GetObjectPosition(recvPacket);
                     Quaternion rot = GetObjectRotation(recvPacket);
+
+                    Debug.Log($"Client Move : {pos}");
 
                     Entity entity = entities[recvPacket.networkId].GetComponent<Entity>();
                     entity.Move(pos, rot);
@@ -120,7 +127,9 @@ namespace VersusFight
                     // 자신의 정보를 클라이언트에게 전송함
                     if (packet.packetType != PacketType.Move) packet.packetType = PacketType.Move;
 
-                    SetObjectPositionAndRotation(ref packet, entities[myNetworkId]);
+                    recvPacket.networkId = myNetworkId;
+                    SetObjectPositionAndRotation(ref recvPacket, entities[myNetworkId]);
+                    packet.data = PacketSerializer.SerializeMove(recvPacket);
 
                     // 클라이언트에게 자신의 이동 정보 전송
                     SendPacket();
@@ -131,13 +140,13 @@ namespace VersusFight
         // 패킷 전송
         private void SendPacket()
         {
-            byte[] sendPacket = Serialize(packet);
-            udp.Send(sendPacket, sendPacket.Length, remoteEndPoint);
+            byte[] sendPacket = PacketSerializer.SerializePacket(packet);
+            int sent = udp.Send(sendPacket, sendPacket.Length, remoteEndPoint);
         }
 
         private void SendPacket(Packet p)
         {
-            byte[] sendPacket = Serialize(p);
+            byte[] sendPacket = PacketSerializer.SerializePacket(p);
             udp.Send(sendPacket, sendPacket.Length, remoteEndPoint);
         }
     }
