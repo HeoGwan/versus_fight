@@ -12,6 +12,8 @@ namespace VersusFight
         Move = 3,
         Run = 4,
         Sprint = 5,
+        Attack = 6,
+        Hit = 7,
         DisConnect = 255,
     }
     // 패킷 구조체
@@ -19,7 +21,7 @@ namespace VersusFight
     {
         public PacketType packetType;   // 1
         public byte[] data;
-    }  // 33 bytes
+    }
     // public struct Packet
     // {
     //     public PacketType packetType;   // 1
@@ -50,16 +52,30 @@ namespace VersusFight
     public struct HitPacket
     {
         public int networkId;               // 4
+        
         // Vector3
         public float knockbackDirectionX;   // 4
         public float knockbackDirectionY;   // 4
         public float knockbackDirectionZ;   // 4
     }; // 16 bytes
+    public struct AttackPacket
+    {
+        public int networkId;           // 4
+
+        // Vector3
+        public float attackDirectionX;  // 4
+        public float attackDirectionY;  // 4
+        public float attackDirectionZ;  // 4
+
+        // 공격력
+        public float attack;            // 4
+    }; // 20 bytes
 
     public class PacketSerializer
     {
         private const uint MOVE_PACKET_SIZE = 32;
         private const uint HIT_PACKET_SIZE = 16;
+        private const uint ATTACK_PACKET_SIZE = 20;
 
 
         // 패킷 직렬화 (전송 시)
@@ -149,6 +165,36 @@ namespace VersusFight
                 knockbackDirectionX = BitConverter.ToSingle(data, 4),
                 knockbackDirectionY = BitConverter.ToSingle(data, 8),
                 knockbackDirectionZ = BitConverter.ToSingle(data, 12),
+            };
+        }
+
+        // 공격 패킷
+        public static byte[] SerializeAttack(AttackPacket packet)
+        {
+            byte[] data = new byte[ATTACK_PACKET_SIZE];
+
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.networkId), 0, data, 0, 4);
+
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.attackDirectionX), 0, data, 4, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.attackDirectionY), 0, data, 8, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.attackDirectionZ), 0, data, 12, 4);
+
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.attack), 0, data, 16, 4);
+
+            return data;
+        }
+
+        public static AttackPacket DeserializeAttack(byte[] data)
+        {
+            return new AttackPacket()
+            {
+                networkId = BitConverter.ToInt32(data, 0),
+
+                attackDirectionX = BitConverter.ToSingle(data, 4),
+                attackDirectionY = BitConverter.ToSingle(data, 8),
+                attackDirectionZ = BitConverter.ToSingle(data, 12),
+
+                attack = BitConverter.ToSingle(data, 16),
             };
         }
     }

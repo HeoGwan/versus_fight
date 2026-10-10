@@ -4,6 +4,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 
 
 namespace VersusFight
@@ -30,6 +31,7 @@ namespace VersusFight
 
             // entityId를 저장함
             myNetworkId = networkId++;
+            VNetworkManager.Instance.NetworkId = myNetworkId;
 
             // 서버로 설정한 플레이어가 맨 처음 소환된다.
             entities[myNetworkId] = Instantiate(playerObj, new Vector3(0, 0.2f, -7.1f), Quaternion.identity);
@@ -119,9 +121,7 @@ namespace VersusFight
                     Vector3 pos = GetObjectPosition(recvPacket);
                     Quaternion rot = GetObjectRotation(recvPacket);
 
-                    Debug.Log($"Client Move : {pos}");
-
-                    Entity entity = entities[recvPacket.networkId].GetComponent<Entity>();
+                    Enemy entity = entities[recvPacket.networkId].GetComponent<Enemy>();
                     entity.Move(pos, rot);
 
                     // 자신의 정보를 클라이언트에게 전송함
@@ -134,6 +134,24 @@ namespace VersusFight
                     // 클라이언트에게 자신의 이동 정보 전송
                     SendPacket();
                 }
+                else if (packetType == PacketType.Attack)
+                {
+                    AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
+                    // 공격을 받았을 경우
+                    // 상대방이 나를 공격한 것이므로 나의 networkId를 가져온다.
+                    Entity entity = entities[myNetworkId].GetComponent<Entity>();
+
+                    Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
+                                                    recvPacket.attackDirectionY,
+                                                    recvPacket.attackDirectionZ);
+                    Debug.Log($"Server attackDir : {attackDir}");
+                    entity.Hit(attackDir, recvPacket.attack);
+
+                    // 공격 정보를 전달함
+                    packet.packetType = PacketType.Attack;
+                    packet.data = PacketSerializer.SerializeAttack(recvPacket);
+                    SendPacket();
+                }
             }
         }
 
@@ -144,7 +162,7 @@ namespace VersusFight
             int sent = udp.Send(sendPacket, sendPacket.Length, remoteEndPoint);
         }
 
-        private void SendPacket(Packet p)
+        public override void SendPacket(Packet p)
         {
             byte[] sendPacket = PacketSerializer.SerializePacket(p);
             udp.Send(sendPacket, sendPacket.Length, remoteEndPoint);

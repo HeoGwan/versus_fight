@@ -85,6 +85,7 @@ namespace VersusFight
                     MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
                     // id 저장
                     myNetworkId = recvPacket.networkId;
+                    VNetworkManager.Instance.NetworkId = myNetworkId;
 
                     // 자신의 오브젝트를 생성함
                     entities[myNetworkId] = Instantiate(playerObj
@@ -124,8 +125,20 @@ namespace VersusFight
                     Vector3 pos = new Vector3(recvPacket.x, recvPacket.y, recvPacket.z);
                     Quaternion rot = new Quaternion(recvPacket.rotX, recvPacket.rotY, recvPacket.rotZ, recvPacket.rotW);
 
-                    Entity entity = entities[recvPacket.networkId].GetComponent<Entity>();
+                    Enemy entity = entities[recvPacket.networkId].GetComponent<Enemy>();
                     entity.Move(pos, rot);
+                }
+                else if (packetType == PacketType.Attack)
+                {
+                    AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
+                    // 공격을 받았을 경우
+                    Entity entity = entities[myNetworkId].GetComponent<Entity>();
+
+                    Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
+                                                    recvPacket.attackDirectionY,
+                                                    recvPacket.attackDirectionZ);
+                    Debug.Log($"Client attackDir : {attackDir}");
+                    entity.Hit(attackDir, recvPacket.attack);
                 }
             }
         }
@@ -159,7 +172,7 @@ namespace VersusFight
             udp.Send(sendPacket, sendPacket.Length, ip, port);
         }
 
-        private void SendPacket(Packet p)
+        public override void SendPacket(Packet p)
         {
             byte[] sendPacket = PacketSerializer.SerializePacket(p);
             udp.Send(sendPacket, sendPacket.Length, ip, port);

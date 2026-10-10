@@ -1,87 +1,107 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
-public class Entity : MonoBehaviour
+
+namespace VersusFight
 {
-    Animator _animator;
-    Rigidbody _rigid;
-
-    [SerializeField] private float knockbackForce = 1.5f; // 넉백 힘
-    
-    [Space(10)]
-    [SerializeField] private float invincibleDuration = 1f; // 무적 시간
-    bool isInvincible = false;
-    WaitForSecondsRealtime waitInvincible;
-
-    [Space(10)]
-    [SerializeField] float walkSpeed = 5f;
-
-    [Space(10)]
-    [SerializeField] private ParticleSystem hitParticle;
-
-    private Vector3 targetPosition;
-    private Quaternion targetRotation;
-
-    void Start()
+    [
+        RequireComponent(typeof(Rigidbody)),
+        RequireComponent(typeof(EntityInfo)),
+    ]
+    public class Entity : MonoBehaviour
     {
-        _animator = GetComponent<Animator>();
-        _rigid = GetComponent<Rigidbody>();
+        [Serializable]
+        protected enum State
+        {
+            Idle,
+            Walk,
+            Run,
+            Sprint,
+            Hit,
+            Move,
+        };
+        [SerializeField] protected State state = State.Idle;
 
-        _animator.enabled = true;
-        waitInvincible = new WaitForSecondsRealtime(invincibleDuration);
+        protected Rigidbody _rigid;
+        protected EntityInfo _info;
 
-        targetPosition = transform.position;
-    }
-
-    void Update()
-    {
-        transform.position = Vector3.Lerp(
-            transform.position,
-            targetPosition,
-            walkSpeed * Time.deltaTime
-        );
+        [SerializeField] protected float knockbackForce = 1.5f; // 넉백 힘
         
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            targetRotation,
-            walkSpeed * Time.deltaTime
-        );
-    }
+        [Space(10)]
+        [SerializeField] protected float invincibleDuration = 1f; // 무적 시간
+        protected bool isInvincible = false;
+        protected WaitForSecondsRealtime waitInvincible;
 
-    public void Hit(Vector3 attackAreaPosition)
-    {
-        // 무적 상태 확인
-        if (isInvincible) return;
+        [Space(10)]
+        [SerializeField] protected float walkSpeed = 5f;
 
-        // 피격 방향 벡터를 얻음
-        // Vector3 hitDirection = transform.position - attackAreaPosition;
-        Vector3 hitDirection = Vector3.forward;
+        [Space(10)]
+        [SerializeField] protected Animator animator;
+        [SerializeField] protected ParticleSystem hitParticle;
 
-        // 피격 받은 쪽으로 넉백
-        _rigid.AddForce(hitDirection * knockbackForce);
+        protected virtual void Start()
+        {
+            _rigid = GetComponent<Rigidbody>();
+            _info = GetComponent<EntityInfo>();
 
-        // 피격 애니메이션 및 파티클 재생
-        _animator.SetTrigger("Hit");
-        hitParticle.Play();
+            waitInvincible = new WaitForSecondsRealtime(invincibleDuration);
 
-        // 무적 시간
-        StartCoroutine(Invincible());
-    }
+            if (hitParticle == null)
+            {
+                Debug.LogError("not assigned hitParticle");
+            }
 
-    public void Move(Vector3 position, Quaternion rotation)
-    {
-        targetPosition = position;
-        targetRotation = rotation;
-    }
+            if (animator == null)
+            {
+                Debug.LogError("not assigned animator");
+            }
+            else animator.enabled = true;
+        }
 
-    // 무적 코루틴
-    IEnumerator Invincible()
-    {
-        isInvincible = true;
+        public virtual void Hit(Vector3 attackAreaPosition, float attack)
+        {
+            // 무적 상태 확인
+            if (isInvincible) return;
 
-        yield return waitInvincible;
+            // 피격 방향 벡터를 얻음
+            Vector3 hitDirection = transform.position - attackAreaPosition;
+            // Vector3 hitDirection = Vector3.forward;
 
-        isInvincible = false;
+            // 피격 받은 쪽으로 넉백
+            _rigid.AddForce(hitDirection * knockbackForce);
+
+            // 피격 애니메이션 및 파티클 재생
+            if (animator.HasParameter("Hit"))
+            {
+                animator.SetTrigger("Hit");
+            }
+            hitParticle.Play();
+
+            // 네트워크로 피격 패킷을 전송함
+            // HitPacket hitPacket = new HitPacket()
+            // {
+            //     networkId = VNetworkManager.Instance.NetworkId,
+
+            //     knockbackDirectionX = hitDirection.x,
+            //     knockbackDirectionY = hitDirection.y,
+            //     knockbackDirectionZ = hitDirection.z,
+            // };
+            // VNetworkManager.Instance.SendPacket(PacketType.Hit,
+            //         PacketSerializer.SerializeHit(hitPacket));
+
+            // 무적 시간
+            StartCoroutine(Invincible());
+        }
+
+        // 무적 코루틴
+        IEnumerator Invincible()
+        {
+            isInvincible = true;
+
+            yield return waitInvincible;
+
+            isInvincible = false;
+        }
     }
 }

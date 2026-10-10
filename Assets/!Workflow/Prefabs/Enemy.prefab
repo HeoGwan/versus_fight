@@ -2476,6 +2476,7 @@ GameObject:
   - component: {fileID: 7470200001707163098}
   - component: {fileID: 6212902508827227403}
   - component: {fileID: 3029283633482390428}
+  - component: {fileID: 3242934967026019546}
   m_Layer: 0
   m_Name: Model
   m_TagString: Entity
@@ -2578,6 +2579,28 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!95 &3242934967026019546
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4198595358637834389}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d47fa8d6499cd44cfb2cea74c1ff4481, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &5028781117053336781
 GameObject:
   m_ObjectHideFlags: 0
@@ -2587,9 +2610,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7948310137921758314}
-  - component: {fileID: 6105396606578980371}
-  - component: {fileID: 3664975580436491482}
+  - component: {fileID: 4342341439869143668}
   - component: {fileID: 6850189003871753221}
+  - component: {fileID: 2637149688100519900}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -2615,29 +2638,7 @@ Transform:
   - {fileID: 2557127092809218156}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &6105396606578980371
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5028781117053336781}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: d47fa8d6499cd44cfb2cea74c1ff4481, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
---- !u!114 &3664975580436491482
+--- !u!114 &4342341439869143668
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2646,12 +2647,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5028781117053336781}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68df9960dceb64c5db32868e735192d4, type: 3}
+  m_Script: {fileID: 11500000, guid: 0bfb2ea71211b4d6986df174fed11e45, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Entity
+  m_EditorClassIdentifier: Assembly-CSharp::VersusFight.Enemy
+  state: 0
   knockbackForce: 500
   invincibleDuration: 1
   walkSpeed: 5
+  animator: {fileID: 3242934967026019546}
   hitParticle: {fileID: 4987733272517905954}
 --- !u!54 &6850189003871753221
 Rigidbody:
@@ -2680,3 +2683,15 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &2637149688100519900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5028781117053336781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: baa0d32f9ebf547069d29c469e15f493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityInfo

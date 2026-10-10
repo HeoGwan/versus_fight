@@ -1,16 +1,19 @@
 using UnityEngine;
 
-public class Weapon : MonoBehaviour
+namespace VersusFight
 {
-    private PlayerController playerController;
-
-    void Start()
+    public class Weapon : MonoBehaviour
     {
-        playerController = GetComponentInParent<PlayerController>();
-    }
+        private PlayerController playerController;
 
-    public void EndAttack()
-    {
-        playerController.EndAttack();
+        void Start()
+        {
+            playerController = GetComponentInParent<PlayerController>();
+        }
+
+        public void EndAttack()
+        {
+            playerController.EndAttack();
+        }
     }
 }

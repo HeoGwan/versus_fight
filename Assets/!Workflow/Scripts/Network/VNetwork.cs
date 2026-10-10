@@ -170,5 +170,7 @@ namespace VersusFight
             Quaternion result = new Quaternion(packet.rotX, packet.rotY, packet.rotZ, packet.rotW);
             return result;
         }
+
+        public abstract void SendPacket(Packet p);
     }
 }
