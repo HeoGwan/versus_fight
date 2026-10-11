@@ -1,5 +1,5 @@
 using System;
-using System.Runtime.InteropServices;
+
 
 namespace VersusFight
 {
@@ -14,7 +14,8 @@ namespace VersusFight
         Sprint = 5,
         Attack = 6,
         Hit = 7,
-        DisConnect = 255,
+        MaxConnect = 8,
+        Disconnect = 255,
     }
     // 패킷 구조체
     public struct Packet
@@ -22,20 +23,6 @@ namespace VersusFight
         public PacketType packetType;   // 1
         public byte[] data;
     }
-    // public struct Packet
-    // {
-    //     public PacketType packetType;   // 1
-    //     public int networkId;   // 4
-
-    //     public float x;        // 4
-    //     public float y;        // 4
-    //     public float z;        // 4
-
-    //     public float rotX;     // 4
-    //     public float rotY;     // 4
-    //     public float rotZ;     // 4
-    //     public float rotW;     // 4
-    // }  // 33 bytes
     public struct MovePacket
     {
         public int networkId;   // 4
@@ -70,12 +57,18 @@ namespace VersusFight
         // 공격력
         public float attack;            // 4
     }; // 20 bytes
+    public struct DisconnectPacket
+    {
+        public int networkId;   // 4
+    }; // 4 bytes
+
 
     public class PacketSerializer
     {
         private const uint MOVE_PACKET_SIZE = 32;
         private const uint HIT_PACKET_SIZE = 16;
         private const uint ATTACK_PACKET_SIZE = 20;
+        private const uint DISCONNECT_PACKET_SIZE = 4;
 
 
         // 패킷 직렬화 (전송 시)
@@ -195,6 +188,25 @@ namespace VersusFight
                 attackDirectionZ = BitConverter.ToSingle(data, 12),
 
                 attack = BitConverter.ToSingle(data, 16),
+            };
+        }
+
+
+        // 연결 종료 패킷
+        public static byte[] SerializeDiconnect(DisconnectPacket packet)
+        {
+            byte[] data = new byte[DISCONNECT_PACKET_SIZE];
+
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.networkId), 0, data, 0, 4);
+
+            return data;
+        }
+
+        public static DisconnectPacket DeserializeDiconnect(byte[] data)
+        {
+            return new DisconnectPacket()
+            {
+                networkId = BitConverter.ToInt32(data, 0),
             };
         }
     }

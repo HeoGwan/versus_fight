@@ -12,7 +12,7 @@ public class VNetworkManager : MonoBehaviour
     }
 
     // 네트워크 클래스
-    private VNetwork network;
+    [SerializeField] private VNetwork network;
     public int NetworkId { get; set; }
 
     // 설정
@@ -44,13 +44,15 @@ public class VNetworkManager : MonoBehaviour
 
     public void ConnectServer()
     {
-        network = gameObject.AddComponent<VNetworkServer>();
+        network = gameObject.GetComponent<VNetworkServer>();
+        if (network == null) network = gameObject.AddComponent<VNetworkServer>();
         Connect();
     }
 
     public void ConnectClient()
     {
-        network = gameObject.AddComponent<VNetworkClient>();
+        network = gameObject.GetComponent<VNetworkClient>();
+        if (network == null) network = gameObject.AddComponent<VNetworkClient>();
         Connect();
     }
 
@@ -67,10 +69,23 @@ public class VNetworkManager : MonoBehaviour
     {
         if (network == null) return;
         
+        // Disconnect 패킷을 보냄
+        DisconnectPacket packet = new DisconnectPacket()
+        {
+            networkId = NetworkId
+        };
+
+        Packet disconnectPacket = new Packet()
+        {
+            packetType = PacketType.Disconnect,
+            data = PacketSerializer.SerializeDiconnect(packet),
+        };
+        network.SendPacket(disconnectPacket);
+
         if (network.Disconnect())
         {
             // 연결 끊기 성공
-
+            network = null;
         }
     }
 

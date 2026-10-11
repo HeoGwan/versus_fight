@@ -1,7 +1,7 @@
-using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 
 namespace VersusFight
 {
@@ -102,7 +102,7 @@ namespace VersusFight
         void OnMove(InputValue value)
         {
             if (GameManager.Instance.IsPause) return;
-            
+
             // 이동 처리 (앞, 뒤, 좌, 우에 대한 벡터)
             Vector2 move = value.Get<Vector2>();
 

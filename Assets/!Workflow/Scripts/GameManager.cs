@@ -1,7 +1,7 @@
-using System;
-using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 
 public class GameManager : MonoBehaviour
 {
@@ -11,7 +11,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Canvas startCanvas;
     [SerializeField] private Canvas pauseCanvas;
 
+    [Space(10)]
     [SerializeField] InputActionReference pauseAction;
+
+    [Space(10)]
+    [SerializeField] Camera startCamera;
 
     private bool isPause = false;
     public bool IsPause => isPause;
@@ -77,11 +81,26 @@ public class GameManager : MonoBehaviour
 
     public void Disconnect()
     {
-        // VNetworkManager의 Disconnect 호출
-        VNetworkManager.Instance.Disconnect();
         // 일시정지 캔버스 끄기
         pauseCanvas.gameObject.SetActive(false);
         // 일시정지 캔버스 켜기
         startCanvas.gameObject.SetActive(true);
+
+        // 시작 카메라 활성화
+        startCamera.gameObject.SetActive(true);
+        
+        isPause = false;
+
+        // VNetworkManager의 Disconnect 호출
+        VNetworkManager.Instance.Disconnect();
+    }
+
+    public void GameEnd()
+    {
+        #if UNITY_EDITOR
+            EditorApplication.ExitPlaymode();
+        #else
+            Application.Quit();
+        #endif
     }
 }

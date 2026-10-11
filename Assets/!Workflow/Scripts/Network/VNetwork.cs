@@ -9,56 +9,9 @@ namespace VersusFight
 {
     public abstract class VNetwork : MonoBehaviour
     {
-        // // Packet
-        // // 패킷 타입
-        // public enum PacketType : byte
-        // {
-        //     None = 0,
-        //     Connect = 1,
-        //     Initialize = 2,
-        //     Move = 3,
-        //     Run = 4,
-        //     Sprint = 5,
-        //     DisConnect = 255,
-        // }
-        // // 패킷 구조체
-        // public struct Packet
-        // {
-        //     public PacketType packetType;   // 1
-        //     public int networkId;   // 4
-
-        //     public float x;        // 4
-        //     public float y;        // 4
-        //     public float z;        // 4
-
-        //     public float rotX;     // 4
-        //     public float rotY;     // 4
-        //     public float rotZ;     // 4
-        //     public float rotW;     // 4
-        // }  // 33 bytes
-        // public struct MovePacket
-        // {  
-        //     public int networkId;   // 4
-
-        //     public float x;        // 4
-        //     public float y;        // 4
-        //     public float z;        // 4
-
-        //     public float rotX;     // 4
-        //     public float rotY;     // 4
-        //     public float rotZ;     // 4
-        //     public float rotW;     // 4
-        // }
-        // public struct HitPacket
-        // {
-        //     public int networkId;
-        //     public Vector3 knockbackDirection;
-
-        // }
-        // protected const uint PACKET_SIZE = 33;
+        // Packet
         protected Packet packet;
-
-        private const uint MAX_PLAYERS = 2;
+        protected const uint MAX_PLAYERS = 2;
 
 
         // UDP Client
@@ -95,54 +48,29 @@ namespace VersusFight
         public abstract bool Connect(GameObject playerObj, GameObject enemyObj, Action connectAction);
 
         // 연결 끊기
-        public abstract bool Disconnect();
+        public bool Disconnect()
+        {
+            if (udp == null) return false;
+
+            // 모든 플레이어와 적 오브젝트를 파괴한다.
+            foreach (GameObject obj in entities)
+            {
+                Destroy(obj);
+            }
+            for (int i = 0; i < MAX_PLAYERS + 1; ++i)
+            {
+                entities[i] = null;
+            }
+
+            isConnecting = false;
+            udp.Close();
+            udp = null;
+
+            return true;
+        }
 
         // 응답 루프
         protected abstract Task ReceiveLoop();
-
-
-        // // 직렬화
-        // public byte[] Serialize(Packet p)
-        // {
-        //     byte[] data = new byte[PACKET_SIZE];
-
-        //     data[0] = (byte)p.packetType;
-
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.networkId), 0, data, 1, 4);
-
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.x), 0, data, 5, 4);
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.y), 0, data, 9, 4);
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.z), 0, data, 13, 4);
-
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.rotX), 0, data, 17, 4);
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.rotY), 0, data, 21, 4);
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.rotZ), 0, data, 25, 4);
-        //     Buffer.BlockCopy(BitConverter.GetBytes(p.rotW), 0, data, 29, 4);
-
-        //     return data;
-        // }
-
-        // // 역직렬화
-        // protected Packet Deserialize(byte[] data)
-        // {
-        //     Packet result = new Packet
-        //     {
-        //         packetType = (PacketType)data[0],
-
-        //         networkId = BitConverter.ToInt32(data, 1),
-
-        //         x = BitConverter.ToSingle(data, 5),
-        //         y = BitConverter.ToSingle(data, 9),
-        //         z = BitConverter.ToSingle(data, 13),
-
-        //         rotX = BitConverter.ToSingle(data, 17),
-        //         rotY = BitConverter.ToSingle(data, 21),
-        //         rotZ = BitConverter.ToSingle(data, 25),
-        //         rotW = BitConverter.ToSingle(data, 29),
-        //     };
-
-        //     return result;
-        // }
 
         // 오브젝트의 이동 정보 저장
         protected void SetObjectPositionAndRotation(ref MovePacket packet, GameObject obj)
@@ -172,5 +100,19 @@ namespace VersusFight
         }
 
         public abstract void SendPacket(Packet p);
+
+
+        // entites를 순회하며 가능한 곳에 오브젝트를 추가한다
+        protected void AddObject(GameObject obj, Vector3 spawnPos, Quaternion spawnRot)
+        {
+            for (int i = 1; i < MAX_PLAYERS + 1; ++i)
+            {
+                if (entities[i] == null)
+                {
+                    entities[i] = Instantiate(obj, spawnPos, spawnRot);
+                    return;
+                }
+            }
+        }
     }
 }

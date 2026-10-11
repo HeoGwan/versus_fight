@@ -29,8 +29,8 @@ namespace VersusFight
         public override bool Connect(GameObject player, GameObject enemy)
         {
             // Initialize Prefab
-            playerObj = player;
-            enemyObj = enemy;
+            if (playerObj == null) playerObj = player;
+            if (enemyObj == null) enemyObj = enemy;
 
             // UdpClient 초기화
             udp = new UdpClient();
@@ -41,8 +41,6 @@ namespace VersusFight
 
             SendPacket();
 
-            Debug.Log($"Client Local : {udp.Client.LocalEndPoint}");
-            
             _ = ReceiveLoop();
 
             return true;
@@ -59,15 +57,6 @@ namespace VersusFight
             return false;
         }
 
-        public override bool Disconnect()
-        {
-            if (udp == null) return false;
-
-            udp.Close();
-
-            return true;
-        }
-
         protected override async Task ReceiveLoop()
         {
             while (true)
@@ -79,66 +68,94 @@ namespace VersusFight
                 // 패킷 종류 저장
                 PacketType packetType = getPacket.packetType;
 
-                // 연결
-                if (packetType == PacketType.Connect)
+                switch (packetType)
                 {
-                    MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
-                    // id 저장
-                    myNetworkId = recvPacket.networkId;
-                    VNetworkManager.Instance.NetworkId = myNetworkId;
+                    case PacketType.Connect:
+                    {
+                        MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
+                        // id 저장
+                        myNetworkId = recvPacket.networkId;
+                        VNetworkManager.Instance.NetworkId = myNetworkId;
 
-                    // 자신의 오브젝트를 생성함
-                    entities[myNetworkId] = Instantiate(playerObj
-                                                , new Vector3(0, 0.2f, 0)
-                                                , new Quaternion(0, 180f, 0, 1));
+                        // 자신의 오브젝트를 생성함
+                        entities[myNetworkId] = Instantiate(playerObj
+                                                    , new Vector3(0, 0.2f, 0)
+                                                    , new Quaternion(0, 180f, 0, 1));
 
-                    // 자신의 위치 및 회전 정보를 서버에 전송함
-                    packet.packetType = PacketType.Initialize; // 서버에게 초기화 요청
+                        // 자신의 위치 및 회전 정보를 서버에 전송함
+                        packet.packetType = PacketType.Initialize; // 서버에게 초기화 요청
 
-                    // 패킷 데이터 초기화
-                    recvPacket.networkId = myNetworkId;
-                    SetObjectPositionAndRotation(ref recvPacket, entities[myNetworkId]);
+                        // 패킷 데이터 초기화
+                        recvPacket.networkId = myNetworkId;
+                        SetObjectPositionAndRotation(ref recvPacket, entities[myNetworkId]);
 
-                    packet.data = PacketSerializer.SerializeMove(recvPacket);
+                        packet.data = PacketSerializer.SerializeMove(recvPacket);
 
-                    SendPacket();
+                        SendPacket();
 
-                    // 패킷 전송 후 연결 상태로 변경
-                    isConnecting = true;
-                }
-                // 초기화
-                else if (packetType == PacketType.Initialize)
-                {
-                    MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
-                    // 서버 플레이어의 오브젝트 생성
-                    Vector3 enemyPos = GetObjectPosition(recvPacket);
-                    Quaternion enemyRot = GetObjectRotation(recvPacket);
+                        // 패킷 전송 후 연결 상태로 변경
+                        isConnecting = true;
+                    }
+                    break;
+                    case PacketType.Initialize:
+                    {
+                        MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
+                        // 서버 플레이어의 오브젝트 생성
+                        Vector3 enemyPos = GetObjectPosition(recvPacket);
+                        Quaternion enemyRot = GetObjectRotation(recvPacket);
 
-                    entities[recvPacket.networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
-                }
-                // 이동
-                else if (packetType == PacketType.Move)
-                {
-                    MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
+                        entities[recvPacket.networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
+                    }
+                    break;
+                    case PacketType.Move:
+                    {
+                        MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
 
-                    // 서버 오브젝트의 이동 정보를 갱신함
-                    Vector3 pos = new Vector3(recvPacket.x, recvPacket.y, recvPacket.z);
-                    Quaternion rot = new Quaternion(recvPacket.rotX, recvPacket.rotY, recvPacket.rotZ, recvPacket.rotW);
+                        // 서버 오브젝트의 이동 정보를 갱신함
+                        Vector3 pos = new Vector3(recvPacket.x, recvPacket.y, recvPacket.z);
+                        Quaternion rot = new Quaternion(recvPacket.rotX, recvPacket.rotY, recvPacket.rotZ, recvPacket.rotW);
 
-                    Enemy entity = entities[recvPacket.networkId].GetComponent<Enemy>();
-                    entity.Move(pos, rot);
-                }
-                else if (packetType == PacketType.Attack)
-                {
-                    AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
-                    // 공격을 받았을 경우
-                    Entity entity = entities[myNetworkId].GetComponent<Entity>();
+                        Enemy entity = entities[recvPacket.networkId].GetComponent<Enemy>();
+                        entity.Move(pos, rot);
+                    }
+                    break;
+                    case PacketType.Attack:
+                    {
+                        AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
+                        // 공격을 받았을 경우
+                        Entity entity = entities[myNetworkId].GetComponent<Entity>();
 
-                    Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
-                                                    recvPacket.attackDirectionY,
-                                                    recvPacket.attackDirectionZ);
-                    Debug.Log($"Client attackDir : {attackDir}");
-                    entity.Hit(attackDir, recvPacket.attack);
+                        Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
+                                                        recvPacket.attackDirectionY,
+                                                        recvPacket.attackDirectionZ);
+                        Debug.Log($"Client attackDir : {attackDir}");
+                        entity.Hit(attackDir, recvPacket.attack);
+                    }
+                    break;
+                    case PacketType.Disconnect:
+                    {
+                        DisconnectPacket recvPacket = PacketSerializer.DeserializeDiconnect(getPacket.data);
+                        // 만약 recvPacket의 networkId가 1이라면 서버가 종료된 것
+                        int networkId = recvPacket.networkId;
+                        if (networkId == 1)
+                        {
+                            // 서버 종료 UI 표시
+
+                            // 접속을 끊음
+                            GameManager.Instance.Disconnect();
+
+                            return;
+                        }
+                        // 자신의 id와 다를 경우
+                        else if (networkId != myNetworkId)
+                        {
+                            // 다른 클라이언트 종료
+                            GameObject outEntity = entities[networkId];
+                            Destroy(outEntity);
+                        }
+                        // 자신과 id가 같으면 이미 접속 종료한 것을 의미함
+                    }
+                    break;
                 }
             }
         }
@@ -168,12 +185,24 @@ namespace VersusFight
         // 패킷 전송
         private void SendPacket()
         {
+            if (udp == null)
+            {
+                Debug.LogError("udp is null");
+                return;
+            }
+
             byte[] sendPacket = PacketSerializer.SerializePacket(packet);
             udp.Send(sendPacket, sendPacket.Length, ip, port);
         }
 
         public override void SendPacket(Packet p)
         {
+            if (udp == null)
+            {
+                Debug.LogError("udp is null");
+                return;
+            }
+
             byte[] sendPacket = PacketSerializer.SerializePacket(p);
             udp.Send(sendPacket, sendPacket.Length, ip, port);
         }
