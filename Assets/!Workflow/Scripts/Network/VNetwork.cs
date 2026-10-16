@@ -12,6 +12,7 @@ namespace VersusFight
         // Packet
         protected Packet packet;
         protected const uint MAX_PLAYERS = 2;
+        protected const uint MAX_OBJECTS = 1000;
 
 
         // UDP Client
@@ -31,6 +32,7 @@ namespace VersusFight
 
         // 자신을 포함한 모든 오브젝트 저장
         protected GameObject[] entities;
+        protected GameObject[] interactableObjects;
 
 
         // Constructor
@@ -40,6 +42,7 @@ namespace VersusFight
             packet.packetType = PacketType.None;
 
             entities = new GameObject[MAX_PLAYERS + 1];
+            interactableObjects = new GameObject[MAX_OBJECTS + 1];
         }
 
         // virtual methods
@@ -103,7 +106,7 @@ namespace VersusFight
 
 
         // entites를 순회하며 가능한 곳에 오브젝트를 추가한다
-        protected void AddObject(GameObject obj, Vector3 spawnPos, Quaternion spawnRot)
+        protected void AddEntity(GameObject obj, Vector3 spawnPos, Quaternion spawnRot)
         {
             for (int i = 1; i < MAX_PLAYERS + 1; ++i)
             {

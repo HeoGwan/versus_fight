@@ -6,6 +6,11 @@ namespace VersusFight
     {
         [SerializeField] private float hitPower = 10f;
 
+        void Awake()
+        {
+            gameObject.tag = "InteractableObject";
+        }
+
         public override void Hit(Vector3 attackAreaPosition, float attack)
         {
             Vector3 hitDirection = transform.position - attackAreaPosition;

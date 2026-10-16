@@ -5,6 +5,13 @@ using UnityEngine;
 
 namespace VersusFight
 {
+    public enum EntityType : byte
+    {
+        NONE = 0,
+        PLAYABLE = 1,
+        OBJECTS = 2,
+    };
+
     [
         RequireComponent(typeof(Rigidbody)),
         RequireComponent(typeof(EntityInfo)),
@@ -25,6 +32,7 @@ namespace VersusFight
 
         protected Rigidbody _rigid;
         protected EntityInfo _info;
+        public EntityInfo Info => _info;
 
         [SerializeField] protected float knockbackForce = 1.5f; // 넉백 힘
         

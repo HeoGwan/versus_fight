@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using TMPro;
 using UnityEngine;
 
 using VersusFight;
@@ -10,6 +12,9 @@ public class VNetworkManager : MonoBehaviour
     {
         get { return instance; }
     }
+
+    // 상호작용 오브젝트 저장
+    private GameObject[] interactableObjects;
 
     // 네트워크 클래스
     [SerializeField] private VNetwork network;
@@ -24,12 +29,18 @@ public class VNetworkManager : MonoBehaviour
     [SerializeField] private GameObject playerObj;
     [SerializeField] private GameObject enemyObj;
 
+    // 테스트
+    [Space(10)]
+    [SerializeField] private TextMeshProUGUI infoText;
+
     void Start()
     {
         if (instance == null)
         {
             instance = this;
+            transform.parent = null;
             DontDestroyOnLoad(this);
+            interactableObjects = GameObject.FindGameObjectsWithTag("InteractableObject");
         }
         else
         {
@@ -44,15 +55,19 @@ public class VNetworkManager : MonoBehaviour
 
     public void ConnectServer()
     {
-        network = gameObject.GetComponent<VNetworkServer>();
         if (network == null) network = gameObject.AddComponent<VNetworkServer>();
+        else network = gameObject.GetComponent<VNetworkServer>();
+
+        if (infoText != null) infoText.text = "Server";
         Connect();
     }
 
     public void ConnectClient()
     {
-        network = gameObject.GetComponent<VNetworkClient>();
         if (network == null) network = gameObject.AddComponent<VNetworkClient>();
+        else network = gameObject.GetComponent<VNetworkClient>();
+        
+        if (infoText != null) infoText.text = "Client";
         Connect();
     }
 
@@ -70,15 +85,18 @@ public class VNetworkManager : MonoBehaviour
         if (network == null) return;
         
         // Disconnect 패킷을 보냄
-        DisconnectPacket packet = new DisconnectPacket()
-        {
-            networkId = NetworkId
-        };
+        // DisconnectPacket packet = new DisconnectPacket()
+        // {
+        //     networkId = NetworkId
+        // };
 
         Packet disconnectPacket = new Packet()
         {
-            packetType = PacketType.Disconnect,
-            data = PacketSerializer.SerializeDiconnect(packet),
+            packetType = PacketType.Disconnect, // 1
+            entityType = EntityType.PLAYABLE,   // 1
+            networkId = NetworkId,              // 4
+            // data = PacketSerializer.SerializeDiconnect(packet),
+            data = new byte[1]                  // 1
         };
         network.SendPacket(disconnectPacket);
 
@@ -97,11 +115,13 @@ public class VNetworkManager : MonoBehaviour
 
 
     // public methods
-    public void SendPacket(PacketType packetType, byte[] data)
+    public void SendPacket(PacketType packetType, EntityType entityType, byte[] data)
     {
         Packet p = new Packet()
         {
             packetType = packetType,
+            networkId = NetworkId,
+            entityType = entityType,
             data = data,
         };
         network.SendPacket(p);

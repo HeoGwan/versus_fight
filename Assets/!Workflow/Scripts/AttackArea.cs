@@ -21,7 +21,7 @@ public class AttackArea : MonoBehaviour
         Debug.Log($"attackAreaPos : {attackAreaPos}");
         AttackPacket attackPacket = new AttackPacket()
         {
-            networkId = VNetworkManager.Instance.NetworkId,
+            // networkId = VNetworkManager.Instance.NetworkId,
 
             attackDirectionX = attackAreaPos.x,
             attackDirectionY = attackAreaPos.y,
@@ -29,7 +29,7 @@ public class AttackArea : MonoBehaviour
 
             attack = playerInfo.Attack
         };
-        VNetworkManager.Instance.SendPacket(PacketType.Attack,
+        VNetworkManager.Instance.SendPacket(PacketType.Attack, EntityType.PLAYABLE,
                 PacketSerializer.SerializeAttack(attackPacket));
     }
 
@@ -47,7 +47,7 @@ public class AttackArea : MonoBehaviour
         Debug.Log($"attackAreaPos : {attackAreaPos}");
         AttackPacket attackPacket = new AttackPacket()
         {
-            networkId = VNetworkManager.Instance.NetworkId,
+            // networkId = VNetworkManager.Instance.NetworkId,
 
             attackDirectionX = attackAreaPos.x,
             attackDirectionY = attackAreaPos.y,
@@ -55,7 +55,7 @@ public class AttackArea : MonoBehaviour
 
             attack = playerInfo.Attack
         };
-        VNetworkManager.Instance.SendPacket(PacketType.Attack,
+        VNetworkManager.Instance.SendPacket(PacketType.Attack, EntityType.PLAYABLE,
                 PacketSerializer.SerializeAttack(attackPacket));
     }
 

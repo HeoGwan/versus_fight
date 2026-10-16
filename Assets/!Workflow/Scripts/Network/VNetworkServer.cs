@@ -16,6 +16,7 @@ namespace VersusFight
 
         // grant
         private int networkId = 1;
+        private int objectId = 1;
         private IPEndPoint remoteEndPoint; // 여러 클라이언트가 접속하면 리스트 형태로 바뀌어야 함
 
 
@@ -52,6 +53,25 @@ namespace VersusFight
             return false;
         }
 
+        // 상호작용 오브젝트 설정
+        public void SetObjects(GameObject[] objs)
+        {
+            for (int i = 0; i < objs.Length; ++i)
+            {
+                InteractableObject interObject = objs[i].GetComponent<InteractableObject>();
+                interObject.Info.NetworkId = objectId;
+                interactableObjects[objectId++] = objs[i];
+            }
+        }
+
+        public void AddObject(GameObject obj)
+        {
+            InteractableObject interObject = obj.GetComponent<InteractableObject>();
+            interObject.Info.NetworkId = objectId;
+            interactableObjects[objectId++] = obj;
+        }
+
+
         protected override async Task ReceiveLoop()
         {
             while (true)
@@ -65,11 +85,14 @@ namespace VersusFight
                 // 패킷 종류 저장
                 PacketType packetType = getPacket.packetType;
 
+                Debug.Log($"Receive Packet : {getPacket}");
+
                 // 클라이언트 접속 진행
                 switch(packetType)
                 {
                     case PacketType.Connect:
                     {
+                        Debug.Log("Receive Connect");
                         if (players == MAX_PLAYERS)
                         {
                             // 더이상 접근할 수 없음을 알림
@@ -85,7 +108,8 @@ namespace VersusFight
 
                         // 서버 플레이어의 위치 및 회전 정보 전달
                         players++;
-                        recvPacket.networkId = networkId++;
+                        packet.networkId = networkId++;
+                        packet.entityType = EntityType.PLAYABLE;
                         GameObject entity = entities[myNetworkId];
                         SetObjectPositionAndRotation(ref recvPacket, entity);
                         packet.data = PacketSerializer.SerializeMove(recvPacket);
@@ -102,13 +126,14 @@ namespace VersusFight
                         // 전달받은 클라이언트 위치 및 회전 정보를 기반으로 오브젝트 생성
                         Vector3 enemyPos = GetObjectPosition(recvPacket);
                         Quaternion enemyRot = GetObjectRotation(recvPacket);
-                        entities[recvPacket.networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
+                        entities[getPacket.networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
 
                         // 클라이언트에게 자신의 위치 정보를 알려줌
                         packet.packetType = PacketType.Initialize;
 
                         // 위치 정보 저장
-                        recvPacket.networkId = myNetworkId;
+                        packet.networkId = myNetworkId;
+                        packet.entityType = EntityType.PLAYABLE;
                         GameObject entity = entities[myNetworkId];
                         SetObjectPositionAndRotation(ref recvPacket, entity);
                         packet.data = PacketSerializer.SerializeMove(recvPacket);
@@ -125,13 +150,14 @@ namespace VersusFight
                         Vector3 pos = GetObjectPosition(recvPacket);
                         Quaternion rot = GetObjectRotation(recvPacket);
 
-                        Enemy entity = entities[recvPacket.networkId].GetComponent<Enemy>();
+                        Enemy entity = entities[getPacket.networkId].GetComponent<Enemy>();
                         entity.Move(pos, rot);
 
                         // 자신의 정보를 클라이언트에게 전송함
                         if (packet.packetType != PacketType.Move) packet.packetType = PacketType.Move;
 
-                        recvPacket.networkId = myNetworkId;
+                        packet.networkId = myNetworkId;
+                        packet.entityType = EntityType.PLAYABLE;
                         SetObjectPositionAndRotation(ref recvPacket, entities[myNetworkId]);
                         packet.data = PacketSerializer.SerializeMove(recvPacket);
 
@@ -142,9 +168,14 @@ namespace VersusFight
                     case PacketType.Attack:
                     {
                         AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
+                        int entityId = getPacket.networkId;
+                        EntityType entityType = getPacket.entityType;
                         // 공격을 받았을 경우
-                        // 상대방이 나를 공격한 것이므로 나의 networkId를 가져온다.
-                        Entity entity = entities[myNetworkId].GetComponent<Entity>();
+                        // entityType이 PLAYABLE일 때랑 OBJECT일 때랑 다르게 작동한다.
+                        bool isPlayable = entityType == EntityType.PLAYABLE;
+                        Entity entity = isPlayable ?
+                            entities[myNetworkId].GetComponent<Entity>() :
+                            interactableObjects[entityId].GetComponent<Entity>();
 
                         Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
                                                         recvPacket.attackDirectionY,
@@ -154,15 +185,19 @@ namespace VersusFight
 
                         // 공격 정보를 전달함
                         packet.packetType = PacketType.Attack;
+                        packet.networkId = isPlayable ? myNetworkId : getPacket.networkId;
+                        packet.entityType = getPacket.entityType;
                         packet.data = PacketSerializer.SerializeAttack(recvPacket);
                         SendPacket();
+                        
                     }
                     break;
                     case PacketType.Disconnect:
                     {
-                        DisconnectPacket recvPacket = PacketSerializer.DeserializeDiconnect(getPacket.data);
+                        Debug.Log("Client Shutdown");
+                        // DisconnectPacket recvPacket = PacketSerializer.DeserializeDiconnect(getPacket.data);
                         // 연결 종료 시 전달받은 networkId에 해당하는 오브젝트를 지움
-                        GameObject outEntity = entities[recvPacket.networkId];
+                        GameObject outEntity = entities[packet.networkId];
                         Destroy(outEntity);
 
                         players--;
