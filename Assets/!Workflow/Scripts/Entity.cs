@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+
+using UnityEditor;
 using UnityEngine;
 
 
@@ -48,6 +50,15 @@ namespace VersusFight
         [SerializeField] protected Animator animator;
         [SerializeField] protected ParticleSystem hitParticle;
 
+        [Space(10)]
+        [SerializeField] private string _sceneId;
+        public string SceneId => _sceneId;
+
+        [Space(10)]
+        [SerializeField] protected EntityType entityType;
+
+        protected virtual void Awake() {}
+
         protected virtual void Start()
         {
             _rigid = GetComponent<Rigidbody>();
@@ -67,7 +78,16 @@ namespace VersusFight
             else animator.enabled = true;
         }
 
-        public virtual void Hit(Vector3 attackAreaPosition, float attack)
+        void OnValidate()
+        {
+            #if UNITY_EDITOR
+            GlobalObjectId id =
+                GlobalObjectId.GetGlobalObjectIdSlow(gameObject);
+            _sceneId = id.ToString();
+            #endif
+        }
+
+        public virtual void Hit(Vector3 attackAreaPosition, float attack = 1f, bool isReceive = false)
         {
             // 무적 상태 확인
             if (isInvincible) return;
@@ -86,20 +106,22 @@ namespace VersusFight
             }
             hitParticle.Play();
 
-            // 네트워크로 피격 패킷을 전송함
-            // HitPacket hitPacket = new HitPacket()
-            // {
-            //     networkId = VNetworkManager.Instance.NetworkId,
-
-            //     knockbackDirectionX = hitDirection.x,
-            //     knockbackDirectionY = hitDirection.y,
-            //     knockbackDirectionZ = hitDirection.z,
-            // };
-            // VNetworkManager.Instance.SendPacket(PacketType.Hit,
-            //         PacketSerializer.SerializeHit(hitPacket));
-
             // 무적 시간
             StartCoroutine(Invincible());
+
+            // 네트워크로 피격 패킷을 전송함
+            if (isReceive) return;
+
+            HitPacket hitPacket = new HitPacket()
+            {
+                // networkId = VNetworkManager.Instance.NetworkId,
+
+                knockbackDirectionX = attackAreaPosition.x,
+                knockbackDirectionY = attackAreaPosition.y,
+                knockbackDirectionZ = attackAreaPosition.z,
+            };
+            VNetworkManager.Instance.SendPacket(PacketType.Hit, entityType,
+                    PacketSerializer.SerializeHit(hitPacket));
         }
 
         // 무적 코루틴

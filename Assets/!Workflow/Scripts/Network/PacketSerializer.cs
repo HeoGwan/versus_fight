@@ -47,7 +47,9 @@ namespace VersusFight
         public float knockbackDirectionX;   // 4
         public float knockbackDirectionY;   // 4
         public float knockbackDirectionZ;   // 4
-    }; // 12 bytes
+
+        public float attack;                // 4
+    }; // 16 bytes
     public struct AttackPacket
     {
         // Vector3
@@ -69,7 +71,7 @@ namespace VersusFight
         private const uint PACKET_HEADER_SIZE = 6;
 
         private const uint MOVE_PACKET_SIZE = 28;
-        private const uint HIT_PACKET_SIZE = 12;
+        private const uint HIT_PACKET_SIZE = 16;
         private const uint ATTACK_PACKET_SIZE = 16;
         private const uint DISCONNECT_PACKET_SIZE = 1;
 
@@ -153,6 +155,7 @@ namespace VersusFight
             Buffer.BlockCopy(BitConverter.GetBytes(packet.knockbackDirectionX), 0, data, 0, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(packet.knockbackDirectionY), 0, data, 4, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(packet.knockbackDirectionZ), 0, data, 8, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(packet.attack), 0, data, 12, 4);
 
             return data;
         }
@@ -166,6 +169,8 @@ namespace VersusFight
                 knockbackDirectionX = BitConverter.ToSingle(data, 0),
                 knockbackDirectionY = BitConverter.ToSingle(data, 4),
                 knockbackDirectionZ = BitConverter.ToSingle(data, 8),
+
+                attack = BitConverter.ToSingle(data, 12),
             };
         }
 

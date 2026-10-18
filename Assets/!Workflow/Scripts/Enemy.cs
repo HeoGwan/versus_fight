@@ -12,6 +12,9 @@ namespace VersusFight
             base.Start();
 
             targetPosition = transform.position;
+
+            // 엔티티 타입 설정
+            entityType = EntityType.PLAYABLE;
         }
 
         void Update()
@@ -39,11 +42,11 @@ namespace VersusFight
             }
         }
 
-        public override void Hit(Vector3 attackAreaPosition, float attack)
+        public override void Hit(Vector3 attackAreaPosition, float attack = 1f, bool isReceive = false)
         {
             if (state != State.Hit) state = State.Hit;
 
-            base.Hit(attackAreaPosition, attack);
+            base.Hit(attackAreaPosition, attack, isReceive);
         }
 
         public void Move(Vector3 position, Quaternion rotation)

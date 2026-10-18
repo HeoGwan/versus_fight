@@ -671,6 +671,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ff71711794f2421f88b39f20549cc63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VNetworkManager
+  interactableObjects: []
   network: {fileID: 0}
   startCanvas: {fileID: 696261529}
   startCamera: {fileID: 811682773}
@@ -1569,7 +1570,7 @@ GameObject:
   - component: {fileID: 1154674165}
   - component: {fileID: 1154674164}
   m_Layer: 0
-  m_Name: InteractibleObject
+  m_Name: InteractableObject
   m_TagString: Entity
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1713,6 +1714,8 @@ MonoBehaviour:
   walkSpeed: 5
   animator: {fileID: 0}
   hitParticle: {fileID: 0}
+  _sceneId: GlobalObjectId_V1-2-75c6101ba6bed4110a1250d2da71dea2-1154674158-0
+  entityType: 0
   hitPower: 50
 --- !u!114 &1154674165
 MonoBehaviour:

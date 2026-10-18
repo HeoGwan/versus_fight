@@ -16,7 +16,6 @@ namespace VersusFight
 
         // grant
         private int networkId = 1;
-        private int objectId = 1;
         private IPEndPoint remoteEndPoint; // 여러 클라이언트가 접속하면 리스트 형태로 바뀌어야 함
 
 
@@ -53,25 +52,6 @@ namespace VersusFight
             return false;
         }
 
-        // 상호작용 오브젝트 설정
-        public void SetObjects(GameObject[] objs)
-        {
-            for (int i = 0; i < objs.Length; ++i)
-            {
-                InteractableObject interObject = objs[i].GetComponent<InteractableObject>();
-                interObject.Info.NetworkId = objectId;
-                interactableObjects[objectId++] = objs[i];
-            }
-        }
-
-        public void AddObject(GameObject obj)
-        {
-            InteractableObject interObject = obj.GetComponent<InteractableObject>();
-            interObject.Info.NetworkId = objectId;
-            interactableObjects[objectId++] = obj;
-        }
-
-
         protected override async Task ReceiveLoop()
         {
             while (true)
@@ -85,7 +65,7 @@ namespace VersusFight
                 // 패킷 종류 저장
                 PacketType packetType = getPacket.packetType;
 
-                Debug.Log($"Receive Packet : {getPacket}");
+                // Debug.Log($"Receive Packet : {getPacket}");
 
                 // 클라이언트 접속 진행
                 switch(packetType)
@@ -93,7 +73,7 @@ namespace VersusFight
                     case PacketType.Connect:
                     {
                         Debug.Log("Receive Connect");
-                        if (players == MAX_PLAYERS)
+                        if (players == Setting.MAX_PLAYERS)
                         {
                             // 더이상 접근할 수 없음을 알림
                             packet.packetType = PacketType.MaxConnect;
@@ -165,6 +145,32 @@ namespace VersusFight
                         SendPacket();
                     }
                     break;
+                    case PacketType.Hit:
+                    {
+                        HitPacket recvPacket = PacketSerializer.DeserializeHit(getPacket.data);
+                        int entityId = getPacket.networkId;
+                        EntityType entityType = getPacket.entityType;
+                        // 공격을 받았을 경우
+                        // entityType이 PLAYABLE일 때랑 OBJECT일 때랑 다르게 작동한다.
+                        bool isPlayable = entityType == EntityType.PLAYABLE;
+                        Entity entity = isPlayable ?
+                            entities[myNetworkId].GetComponent<Entity>() :
+                            interactableObjects[entityId].GetComponent<InteractableObject>();
+
+                        Vector3 attackDir = new Vector3(recvPacket.knockbackDirectionX,
+                                                        recvPacket.knockbackDirectionY,
+                                                        recvPacket.knockbackDirectionZ);
+                        Debug.Log($"Server attackDir : {attackDir}");
+                        entity.Hit(attackDir, recvPacket.attack, true);
+
+                        // 공격 정보를 전달함
+                        packet.packetType = PacketType.Attack;
+                        packet.networkId = isPlayable ? myNetworkId : getPacket.networkId;
+                        packet.entityType = getPacket.entityType;
+                        packet.data = PacketSerializer.SerializeHit(recvPacket);
+                        SendPacket();
+                    }
+                    break;
                     case PacketType.Attack:
                     {
                         AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
@@ -177,11 +183,14 @@ namespace VersusFight
                             entities[myNetworkId].GetComponent<Entity>() :
                             interactableObjects[entityId].GetComponent<Entity>();
 
-                        Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
-                                                        recvPacket.attackDirectionY,
-                                                        recvPacket.attackDirectionZ);
-                        Debug.Log($"Server attackDir : {attackDir}");
-                        entity.Hit(attackDir, recvPacket.attack);
+                        // Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
+                        //                                 recvPacket.attackDirectionY,
+                        //                                 recvPacket.attackDirectionZ);
+                        // Debug.Log($"Server attackDir : {attackDir}");
+                        // entity.Hit(attackDir, recvPacket.attack);
+                        
+                        // 공격 애니메이션 진행
+                        // entity.Attack();
 
                         // 공격 정보를 전달함
                         packet.packetType = PacketType.Attack;
@@ -189,7 +198,6 @@ namespace VersusFight
                         packet.entityType = getPacket.entityType;
                         packet.data = PacketSerializer.SerializeAttack(recvPacket);
                         SendPacket();
-                        
                     }
                     break;
                     case PacketType.Disconnect:
@@ -198,6 +206,7 @@ namespace VersusFight
                         // DisconnectPacket recvPacket = PacketSerializer.DeserializeDiconnect(getPacket.data);
                         // 연결 종료 시 전달받은 networkId에 해당하는 오브젝트를 지움
                         GameObject outEntity = entities[packet.networkId];
+                        if (outEntity == null) continue;
                         Destroy(outEntity);
 
                         players--;

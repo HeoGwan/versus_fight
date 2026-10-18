@@ -122,6 +122,26 @@ namespace VersusFight
                         entity.Move(pos, rot);
                     }
                     break;
+                    case PacketType.Hit:
+                    {
+                        HitPacket recvPacket = PacketSerializer.DeserializeHit(getPacket.data);
+                        int entityId = getPacket.networkId;
+                        EntityType entityType = getPacket.entityType;
+
+                        // 공격을 받았을 경우
+                        bool isPlayable = entityType == EntityType.PLAYABLE;
+                        Entity entity = isPlayable ?
+                            entities[myNetworkId].GetComponent<Entity>() :
+                            interactableObjects[entityId].GetComponent<InteractableObject>();
+                        // Entity entity = entities[myNetworkId].GetComponent<Entity>();
+
+                        Vector3 attackDir = new Vector3(recvPacket.knockbackDirectionX,
+                                                        recvPacket.knockbackDirectionY,
+                                                        recvPacket.knockbackDirectionZ);
+                        Debug.Log($"Client attackDir : {attackDir}");
+                        entity.Hit(attackDir, recvPacket.attack, true);
+                    }
+                    break;
                     case PacketType.Attack:
                     {
                         AttackPacket recvPacket = PacketSerializer.DeserializeAttack(getPacket.data);
@@ -131,14 +151,17 @@ namespace VersusFight
                         bool isPlayable = entityType == EntityType.PLAYABLE;
                         Entity entity = isPlayable ?
                             entities[myNetworkId].GetComponent<Entity>() :
-                            interactableObjects[entityId].GetComponent<Entity>();
+                            interactableObjects[entityId].GetComponent<InteractableObject>();
                         // Entity entity = entities[myNetworkId].GetComponent<Entity>();
 
-                        Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
-                                                        recvPacket.attackDirectionY,
-                                                        recvPacket.attackDirectionZ);
-                        Debug.Log($"Client attackDir : {attackDir}");
-                        entity.Hit(attackDir, recvPacket.attack);
+                        // Vector3 attackDir = new Vector3(recvPacket.attackDirectionX,
+                        //                                 recvPacket.attackDirectionY,
+                        //                                 recvPacket.attackDirectionZ);
+                        // Debug.Log($"Client attackDir : {attackDir}");
+                        // entity.Hit(attackDir, recvPacket.attack);
+
+                        // 공격 애니메이션 진행
+                        // entity.Attack();
                     }
                     break;
                     case PacketType.Disconnect:

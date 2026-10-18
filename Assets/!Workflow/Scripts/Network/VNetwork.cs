@@ -11,8 +11,6 @@ namespace VersusFight
     {
         // Packet
         protected Packet packet;
-        protected const uint MAX_PLAYERS = 2;
-        protected const uint MAX_OBJECTS = 1000;
 
 
         // UDP Client
@@ -25,6 +23,7 @@ namespace VersusFight
 
         // Network Id
         [SerializeField] protected int myNetworkId = -1;
+        protected int objectId = 1;
 
         // Prefabs
         protected GameObject playerObj;
@@ -41,8 +40,8 @@ namespace VersusFight
             packet = new Packet();
             packet.packetType = PacketType.None;
 
-            entities = new GameObject[MAX_PLAYERS + 1];
-            interactableObjects = new GameObject[MAX_OBJECTS + 1];
+            entities = new GameObject[Setting.MAX_PLAYERS + 1];
+            interactableObjects = new GameObject[Setting.MAX_OBJECTS + 1];
         }
 
         // virtual methods
@@ -60,7 +59,7 @@ namespace VersusFight
             {
                 Destroy(obj);
             }
-            for (int i = 0; i < MAX_PLAYERS + 1; ++i)
+            for (int i = 0; i < Setting.MAX_PLAYERS + 1; ++i)
             {
                 entities[i] = null;
             }
@@ -108,13 +107,33 @@ namespace VersusFight
         // entites를 순회하며 가능한 곳에 오브젝트를 추가한다
         protected void AddEntity(GameObject obj, Vector3 spawnPos, Quaternion spawnRot)
         {
-            for (int i = 1; i < MAX_PLAYERS + 1; ++i)
+            for (int i = 1; i < Setting.MAX_PLAYERS + 1; ++i)
             {
                 if (entities[i] == null)
                 {
                     entities[i] = Instantiate(obj, spawnPos, spawnRot);
                     return;
                 }
+            }
+        }
+
+        // 상호작용 오브젝트를 추가한다.
+        public void InitInteractableObjects()
+        {
+            // VNetworkManager의 interactableObject에 objectId를 부여한다.
+            GameObject[] objs = VNetworkManager.Instance.InteractableObjects;
+
+            // 상호작용 오브젝트의 objectId 초기화
+            for (int i = 0; i < objs.Length; ++i)
+            {
+                // InteractableObject interObject = objs[i].GetComponent<InteractableObject>();
+                // if (interObject == null) break;
+                if (objs[i] == null) break;
+
+                if (!objs[i].TryGetComponent<InteractableObject>(out var interObject)) break;
+                
+                interObject.Info.NetworkId = objectId;
+                interactableObjects[objectId++] = objs[i];
             }
         }
     }

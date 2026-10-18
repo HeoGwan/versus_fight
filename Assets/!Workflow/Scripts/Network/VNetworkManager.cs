@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -14,7 +14,8 @@ public class VNetworkManager : MonoBehaviour
     }
 
     // 상호작용 오브젝트 저장
-    private GameObject[] interactableObjects;
+    [SerializeField] private GameObject[] interactableObjects;
+    public GameObject[] InteractableObjects => interactableObjects;
 
     // 네트워크 클래스
     [SerializeField] private VNetwork network;
@@ -40,7 +41,19 @@ public class VNetworkManager : MonoBehaviour
             instance = this;
             transform.parent = null;
             DontDestroyOnLoad(this);
-            interactableObjects = GameObject.FindGameObjectsWithTag("InteractableObject");
+            
+            // 상호작용 오브젝트 초기화
+            var objects = FindObjectsByType<InteractableObject>();
+
+            Array.Sort(objects, (a, b) =>
+                StringComparer.Ordinal.Compare(a.SceneId, b.SceneId));
+
+            interactableObjects = new GameObject[Setting.MAX_OBJECTS + 1];
+
+            for (int i = 0; i < objects.Length; ++i)
+            {
+                interactableObjects[i] = objects[i].gameObject;
+            }
         }
         else
         {
@@ -111,6 +124,9 @@ public class VNetworkManager : MonoBehaviour
     {
         startCanvas.gameObject.SetActive(false);
         startCamera.gameObject.SetActive(false);
+
+        // 상호작용 오브젝트 초기화
+        network.InitInteractableObjects();
     }
 
 

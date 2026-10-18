@@ -62,6 +62,9 @@ namespace VersusFight
             // 공격 애니메이션 설정
             attackClipFrameRate = attackClip.frameRate;
             attackDuration = attackClip.length;
+
+            // 엔티티 타입 설정
+            entityType = EntityType.PLAYABLE;
         }
 
         void LateUpdate()
