@@ -2612,7 +2612,6 @@ GameObject:
   - component: {fileID: 7948310137921758314}
   - component: {fileID: 4342341439869143668}
   - component: {fileID: 6850189003871753221}
-  - component: {fileID: 2637149688100519900}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -2651,11 +2650,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VersusFight.Enemy
   state: 0
+  info:
+    <NetworkId>k__BackingField: 0
+    <Type>k__BackingField: 0
+    <HP>k__BackingField: 10
+    <Attack>k__BackingField: 2
+    <Defense>k__BackingField: 1
   knockbackForce: 500
   invincibleDuration: 1
   walkSpeed: 5
   animator: {fileID: 3242934967026019546}
   hitParticle: {fileID: 4987733272517905954}
+  _sceneId: GlobalObjectId_V1-0-00000000000000000000000000000000-0-0
+  entityType: 0
 --- !u!54 &6850189003871753221
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2683,15 +2690,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
---- !u!114 &2637149688100519900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5028781117053336781}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baa0d32f9ebf547069d29c469e15f493, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EntityInfo

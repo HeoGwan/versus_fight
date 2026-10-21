@@ -17,6 +17,12 @@ namespace VersusFight
         MaxConnect = 8,
         Disconnect = 255,
     }
+    public enum EntityType : byte
+    {
+        NONE = 0,
+        PLAYABLE = 1,
+        OBJECTS = 2,
+    };
     // 패킷 구조체
     public struct Packet
     {

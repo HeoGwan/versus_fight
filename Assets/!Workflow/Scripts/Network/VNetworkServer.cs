@@ -125,6 +125,9 @@ namespace VersusFight
                     // 이동 진행
                     case PacketType.Move:
                     {
+                        // 오브젝트의 움직임은 계산하지 않는다.
+                        if (getPacket.entityType == EntityType.OBJECTS) continue;
+
                         MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
                         // 클라이언트의 이동 정보를 기반으로 업데이트 진행
                         Vector3 pos = GetObjectPosition(recvPacket);
@@ -163,12 +166,12 @@ namespace VersusFight
                         Debug.Log($"Server attackDir : {attackDir}");
                         entity.Hit(attackDir, recvPacket.attack, true);
 
-                        // 공격 정보를 전달함
-                        packet.packetType = PacketType.Attack;
-                        packet.networkId = isPlayable ? myNetworkId : getPacket.networkId;
-                        packet.entityType = getPacket.entityType;
-                        packet.data = PacketSerializer.SerializeHit(recvPacket);
-                        SendPacket();
+                        // // 공격 정보를 전달함
+                        // packet.packetType = PacketType.Hit;
+                        // packet.networkId = isPlayable ? myNetworkId : getPacket.networkId;
+                        // packet.entityType = getPacket.entityType;
+                        // packet.data = PacketSerializer.SerializeHit(recvPacket);
+                        // SendPacket();
                     }
                     break;
                     case PacketType.Attack:
@@ -192,12 +195,12 @@ namespace VersusFight
                         // 공격 애니메이션 진행
                         // entity.Attack();
 
-                        // 공격 정보를 전달함
-                        packet.packetType = PacketType.Attack;
-                        packet.networkId = isPlayable ? myNetworkId : getPacket.networkId;
-                        packet.entityType = getPacket.entityType;
-                        packet.data = PacketSerializer.SerializeAttack(recvPacket);
-                        SendPacket();
+                        // // 공격 정보를 전달함
+                        // packet.packetType = PacketType.Attack;
+                        // packet.networkId = isPlayable ? myNetworkId : getPacket.networkId;
+                        // packet.entityType = getPacket.entityType;
+                        // packet.data = PacketSerializer.SerializeAttack(recvPacket);
+                        // SendPacket();
                     }
                     break;
                     case PacketType.Disconnect:
@@ -241,6 +244,12 @@ namespace VersusFight
             if (udp == null)
             {
                 Debug.LogError("udp is null");
+                return;
+            }
+
+            if (remoteEndPoint == null)
+            {
+                Debug.LogError("no has destination");
                 return;
             }
 

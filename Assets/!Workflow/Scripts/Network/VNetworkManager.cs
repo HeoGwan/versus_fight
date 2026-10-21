@@ -20,6 +20,10 @@ public class VNetworkManager : MonoBehaviour
     // 네트워크 클래스
     [SerializeField] private VNetwork network;
     public int NetworkId { get; set; }
+    private bool isConnect = false;
+    public bool IsConnect => isConnect;
+    private bool isServer = false;
+    public bool IsServer => isServer;
 
     // 설정
     [SerializeField] private Canvas startCanvas;
@@ -71,6 +75,8 @@ public class VNetworkManager : MonoBehaviour
         if (network == null) network = gameObject.AddComponent<VNetworkServer>();
         else network = gameObject.GetComponent<VNetworkServer>();
 
+        isServer = true;
+
         if (infoText != null) infoText.text = "Server";
         Connect();
     }
@@ -79,6 +85,8 @@ public class VNetworkManager : MonoBehaviour
     {
         if (network == null) network = gameObject.AddComponent<VNetworkClient>();
         else network = gameObject.GetComponent<VNetworkClient>();
+
+        isServer = false;
         
         if (infoText != null) infoText.text = "Client";
         Connect();
@@ -90,6 +98,7 @@ public class VNetworkManager : MonoBehaviour
         {
             // 연결 성공
             // _ = network.ReceiveLoop();
+            isConnect = true;
         }
     }
 
@@ -117,6 +126,7 @@ public class VNetworkManager : MonoBehaviour
         {
             // 연결 끊기 성공
             network = null;
+            isConnect = false;
         }
     }
 
@@ -133,6 +143,12 @@ public class VNetworkManager : MonoBehaviour
     // public methods
     public void SendPacket(PacketType packetType, EntityType entityType, byte[] data)
     {
+        if (network == null)
+        {
+            Debug.Log("you can't send packet because network is null");
+            return;
+        }
+
         Packet p = new Packet()
         {
             packetType = packetType,
@@ -140,6 +156,17 @@ public class VNetworkManager : MonoBehaviour
             entityType = entityType,
             data = data,
         };
+        network.SendPacket(p);
+    }
+
+    public void SendPacket(Packet p)
+    {
+        if (network == null)
+        {
+            Debug.Log("you can't send packet because network is null");
+            return;
+        }
+
         network.SendPacket(p);
     }
 }

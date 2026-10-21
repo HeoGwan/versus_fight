@@ -138,7 +138,7 @@ namespace VersusFight
                         Vector3 attackDir = new Vector3(recvPacket.knockbackDirectionX,
                                                         recvPacket.knockbackDirectionY,
                                                         recvPacket.knockbackDirectionZ);
-                        Debug.Log($"Client attackDir : {attackDir}");
+                        
                         entity.Hit(attackDir, recvPacket.attack, true);
                     }
                     break;

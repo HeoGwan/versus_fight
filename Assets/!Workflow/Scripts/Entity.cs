@@ -7,16 +7,8 @@ using UnityEngine;
 
 namespace VersusFight
 {
-    public enum EntityType : byte
-    {
-        NONE = 0,
-        PLAYABLE = 1,
-        OBJECTS = 2,
-    };
-
     [
         RequireComponent(typeof(Rigidbody)),
-        RequireComponent(typeof(EntityInfo)),
     ]
     public class Entity : MonoBehaviour
     {
@@ -32,9 +24,13 @@ namespace VersusFight
         };
         [SerializeField] protected State state = State.Idle;
 
-        protected Rigidbody _rigid;
-        protected EntityInfo _info;
-        public EntityInfo Info => _info;
+        protected Rigidbody rigid;
+        [SerializeField] protected EntityInfo info;
+        public EntityInfo Info => info;
+
+        // 네트워크 루프 간격
+        protected float networkInterval = 1f / 30f;
+        protected float time = 0.0f;
 
         [SerializeField] protected float knockbackForce = 1.5f; // 넉백 힘
         
@@ -61,8 +57,8 @@ namespace VersusFight
 
         protected virtual void Start()
         {
-            _rigid = GetComponent<Rigidbody>();
-            _info = GetComponent<EntityInfo>();
+            rigid = GetComponent<Rigidbody>();
+            info = new EntityInfo();
 
             waitInvincible = new WaitForSecondsRealtime(invincibleDuration);
 
@@ -96,8 +92,9 @@ namespace VersusFight
             Vector3 hitDirection = transform.position - attackAreaPosition;
             // Vector3 hitDirection = Vector3.forward;
 
-            // 피격 받은 쪽으로 넉백
-            _rigid.AddForce(hitDirection * knockbackForce);
+            // 피격 받은 쪽으로 넉백 (서버만 넉백됨)
+            if (VNetworkManager.Instance.IsServer)
+                rigid.AddForce(hitDirection * knockbackForce);
 
             // 피격 애니메이션 및 파티클 재생
             if (animator.HasParameter("Hit"))

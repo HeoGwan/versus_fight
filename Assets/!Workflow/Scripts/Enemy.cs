@@ -35,7 +35,7 @@ namespace VersusFight
             }
             else if (state == State.Hit)
             {
-                if (_rigid.linearVelocity == Vector3.zero)
+                if (rigid.linearVelocity == Vector3.zero)
                 {
                     state = State.Idle;
                 }

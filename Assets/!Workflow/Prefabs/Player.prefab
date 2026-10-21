@@ -293,7 +293,6 @@ GameObject:
   - component: {fileID: 7164324782424656695}
   - component: {fileID: 5524123136192062680}
   - component: {fileID: 7989036199339598719}
-  - component: {fileID: 5176514695060132671}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -331,11 +330,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   state: 0
+  info:
+    <NetworkId>k__BackingField: 0
+    <Type>k__BackingField: 0
+    <HP>k__BackingField: 10
+    <Attack>k__BackingField: 2
+    <Defense>k__BackingField: 1
   knockbackForce: 500
   invincibleDuration: 1
   walkSpeed: 5
   animator: {fileID: 1375226560414492792}
   hitParticle: {fileID: 2629093207024976661}
+  _sceneId: GlobalObjectId_V1-0-00000000000000000000000000000000-0-0
+  entityType: 0
   speed: 5
   runDuration: 2
   runSpeedMultiple: 1.75
@@ -405,18 +412,6 @@ MonoBehaviour:
   m_DefaultActionMap: 
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &5176514695060132671
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6512010828510780126}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baa0d32f9ebf547069d29c469e15f493, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EntityInfo
 --- !u!1 &8281311852956231320
 GameObject:
   m_ObjectHideFlags: 0

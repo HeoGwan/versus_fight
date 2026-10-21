@@ -21,6 +21,8 @@ public class AttackArea : MonoBehaviour
     {
         if (!other.CompareTag("Entity")) return;
 
+        Debug.Log($"object : {other.gameObject.name}");
+
         // 엔티티 공격
         Entity entity = other.GetComponentInParent<Entity>();
         entity.Hit(transform.position, playerInfo.Attack);

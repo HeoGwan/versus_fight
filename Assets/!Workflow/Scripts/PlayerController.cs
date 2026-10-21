@@ -57,7 +57,7 @@ namespace VersusFight
 
             // 공격 범위는 비활성화한다.
             attackArea.enabled = false;
-            attackArea.GetComponent<AttackArea>().SetInfo(ref _info);
+            attackArea.GetComponent<AttackArea>().SetInfo(ref info);
 
             // 공격 애니메이션 설정
             attackClipFrameRate = attackClip.frameRate;
@@ -236,7 +236,7 @@ namespace VersusFight
             // 공격 범위 비활성화
             attackArea.enabled = false;
             // 가속도를 0으로 설정
-            _rigid.linearVelocity = Vector3.zero;
+            rigid.linearVelocity = Vector3.zero;
 
             // 공격 쿨타임 지정
             float time = 0.0f;

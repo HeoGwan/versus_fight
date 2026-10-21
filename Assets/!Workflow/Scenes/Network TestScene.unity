@@ -1567,7 +1567,6 @@ GameObject:
   - component: {fileID: 1154674161}
   - component: {fileID: 1154674160}
   - component: {fileID: 1154674159}
-  - component: {fileID: 1154674165}
   - component: {fileID: 1154674164}
   m_Layer: 0
   m_Name: InteractableObject
@@ -1709,6 +1708,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VersusFight.InteractableObject
   state: 0
+  info:
+    <NetworkId>k__BackingField: 0
+    <Type>k__BackingField: 0
+    <HP>k__BackingField: 10
+    <Attack>k__BackingField: 2
+    <Defense>k__BackingField: 1
   knockbackForce: 1.5
   invincibleDuration: 1
   walkSpeed: 5
@@ -1717,18 +1722,6 @@ MonoBehaviour:
   _sceneId: GlobalObjectId_V1-2-75c6101ba6bed4110a1250d2da71dea2-1154674158-0
   entityType: 0
   hitPower: 50
---- !u!114 &1154674165
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1154674158}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baa0d32f9ebf547069d29c469e15f493, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EntityInfo
 --- !u!1 &1179831035
 GameObject:
   m_ObjectHideFlags: 0
@@ -3551,6 +3544,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5176514695060132671, guid: 062ae47b121384f2fa8b20092c17faf7, type: 3}
+      propertyPath: m_EditorClassIdentifier
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 6512010828510780126, guid: 062ae47b121384f2fa8b20092c17faf7, type: 3}
       propertyPath: m_Name
       value: Player
@@ -3558,6 +3555,10 @@ PrefabInstance:
     - target: {fileID: 6512010828510780126, guid: 062ae47b121384f2fa8b20092c17faf7, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7164324782424656695, guid: 062ae47b121384f2fa8b20092c17faf7, type: 3}
+      propertyPath: _sceneId
+      value: GlobalObjectId_V1-2-75c6101ba6bed4110a1250d2da71dea2-6512010828510780126-3229212751048466665
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3572,6 +3573,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2637149688100519900, guid: 1bd84e8c5f7854fb78ed99cfa8cd078e, type: 3}
+      propertyPath: m_EditorClassIdentifier
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4342341439869143668, guid: 1bd84e8c5f7854fb78ed99cfa8cd078e, type: 3}
+      propertyPath: _sceneId
+      value: GlobalObjectId_V1-2-75c6101ba6bed4110a1250d2da71dea2-5028781117053336781-8226789511640664359
+      objectReference: {fileID: 0}
     - target: {fileID: 5028781117053336781, guid: 1bd84e8c5f7854fb78ed99cfa8cd078e, type: 3}
       propertyPath: m_Name
       value: Enemy
