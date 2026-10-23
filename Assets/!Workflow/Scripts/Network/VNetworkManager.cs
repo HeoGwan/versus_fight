@@ -20,8 +20,7 @@ public class VNetworkManager : MonoBehaviour
     // 네트워크 클래스
     [SerializeField] private VNetwork network;
     public int NetworkId { get; set; }
-    private bool isConnect = false;
-    public bool IsConnect => isConnect;
+    public bool IsConnect { get; set; }
     private bool isServer = false;
     public bool IsServer => isServer;
 
@@ -98,7 +97,6 @@ public class VNetworkManager : MonoBehaviour
         {
             // 연결 성공
             // _ = network.ReceiveLoop();
-            isConnect = true;
         }
     }
 
@@ -126,7 +124,7 @@ public class VNetworkManager : MonoBehaviour
         {
             // 연결 끊기 성공
             network = null;
-            isConnect = false;
+            IsConnect = false;
         }
     }
 
@@ -153,6 +151,24 @@ public class VNetworkManager : MonoBehaviour
         {
             packetType = packetType,
             networkId = NetworkId,
+            entityType = entityType,
+            data = data,
+        };
+        network.SendPacket(p);
+    }
+
+    public void SendPacket(PacketType packetType, int networkId, EntityType entityType, byte[] data)
+    {
+        if (network == null)
+        {
+            Debug.Log("you can't send packet because network is null");
+            return;
+        }
+
+        Packet p = new Packet()
+        {
+            packetType = packetType,
+            networkId = networkId,
             entityType = entityType,
             data = data,
         };

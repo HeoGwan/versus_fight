@@ -35,7 +35,7 @@ namespace VersusFight
 
 
         // Constructor
-        public VNetwork()
+        public virtual void Awake()
         {
             packet = new Packet();
             packet.packetType = PacketType.None;

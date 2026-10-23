@@ -33,6 +33,9 @@ namespace VersusFight
         protected float time = 0.0f;
         protected Vector3 targetPosition;
         protected Quaternion targetRotation;
+        // 패킷 데이터
+        protected MovePacket movePacket;
+
 
         [SerializeField] protected float knockbackForce = 1.5f; // 넉백 힘
         
@@ -56,12 +59,13 @@ namespace VersusFight
         [SerializeField] protected EntityType entityType;
 
 
-        protected virtual void Awake() {}
-
-        protected virtual void Start()
+        protected virtual void Awake() 
         {
             rigid = GetComponent<Rigidbody>();
             info = new EntityInfo();
+
+            targetPosition = transform.position;
+            targetRotation = transform.rotation;
 
             waitInvincible = new WaitForSecondsRealtime(invincibleDuration);
 
@@ -75,6 +79,11 @@ namespace VersusFight
                 Debug.LogWarning("not assigned animator");
             }
             else animator.enabled = true;
+        }
+
+        protected virtual void Start()
+        {
+            
         }
 
         protected virtual void Update()
@@ -99,6 +108,18 @@ namespace VersusFight
                 {
                     state = State.Idle;
                 }
+            }
+
+
+            // 네트워크 루프 관련
+            // 네트워크 연결이 안되어 있으면 무시
+            if (!VNetworkManager.Instance.IsConnect) return;
+
+            time += Time.deltaTime;
+            if (time >= networkInterval)
+            {
+                NetworkLoop();
+                time = 0.0f;
             }
         }
 
@@ -149,13 +170,20 @@ namespace VersusFight
                     PacketSerializer.SerializeHit(hitPacket));
         }
 
-        public void Move(Vector3 position, Quaternion rotation)
+        public virtual void Move(Vector3 position, Quaternion rotation)
         {
             if (state != State.Move) state = State.Move;
             targetPosition = position;
             targetRotation = rotation;
         }
 
+
+        // ========네트워크 함수========
+        protected virtual void NetworkLoop() { }
+        // ========네트워크 함수========
+
+
+        // ========코루틴========
         // 무적 코루틴
         IEnumerator Invincible()
         {

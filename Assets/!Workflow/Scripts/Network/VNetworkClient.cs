@@ -1,8 +1,7 @@
-using UnityEngine;
-
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using UnityEngine;
 
 
 namespace VersusFight
@@ -47,9 +46,23 @@ namespace VersusFight
 
         protected override async Task ReceiveLoop()
         {
+            UdpReceiveResult result;
             while (true)
             {
-                var result = await udp.ReceiveAsync();
+                try
+                {
+                    result = await udp.ReceiveAsync();
+                }
+                catch (ObjectDisposedException)
+                {
+                    Debug.Log("Server ReceiveLoop 종료");
+                    break;
+                }
+                catch (SocketException e)
+                {
+                    Debug.LogWarning($"UDP 수신 중단: {e.SocketErrorCode}");
+                    break;
+                }
 
                 // 패킷 정보 저장
                 Packet getPacket = PacketSerializer.DeserializePacket(result.Buffer);
@@ -85,7 +98,8 @@ namespace VersusFight
 
                         // 패킷 전송 후 연결 상태로 변경
                         isConnecting = true;
-                    }
+                        VNetworkManager.Instance.IsConnect = true;
+                    }   
                     break;
                     case PacketType.Initialize:
                     {
@@ -103,17 +117,18 @@ namespace VersusFight
                     case PacketType.Move:
                     {
                         MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
-
-                        // 서버 오브젝트의 이동 정보를 갱신함
-                        Vector3 pos = new Vector3(recvPacket.x, recvPacket.y, recvPacket.z);
-                        Quaternion rot = new Quaternion(recvPacket.rotX, recvPacket.rotY, recvPacket.rotZ, recvPacket.rotW);
+                            
+                        // 오브젝트의 이동 정보를 갱신함
+                        Vector3 pos = GetObjectPosition(recvPacket);
+                        Quaternion rot = GetObjectRotation(recvPacket);
 
                         int entityId = getPacket.networkId;
                         EntityType entityType = getPacket.entityType;
-                        bool isPlayable = entityType == EntityType.PLAYABLE;
+                        bool isPlayable = (entityType == EntityType.PLAYABLE);
 
+                        // 클라이언트에서는 상호작용 오브젝트도 패킷을 받아 진행함
                         Entity entity = isPlayable ?
-                            entities[myNetworkId].GetComponent<Entity>() :
+                            entities[entityId].GetComponent<Entity>() :
                             interactableObjects[entityId].GetComponent<InteractableObject>();
                         entity.Move(pos, rot);
                     }
@@ -127,7 +142,7 @@ namespace VersusFight
                         // 공격을 받았을 경우
                         bool isPlayable = entityType == EntityType.PLAYABLE;
                         Entity entity = isPlayable ?
-                            entities[myNetworkId].GetComponent<Entity>() :
+                            entities[entityId].GetComponent<Entity>() :
                             interactableObjects[entityId].GetComponent<InteractableObject>();
                         // Entity entity = entities[myNetworkId].GetComponent<Entity>();
                         Debug.Log(entity.name);
@@ -150,7 +165,7 @@ namespace VersusFight
                         // 공격을 받았을 경우
                         bool isPlayable = entityType == EntityType.PLAYABLE;
                         Entity entity = isPlayable ?
-                            entities[myNetworkId].GetComponent<Entity>() :
+                            entities[entityId].GetComponent<Entity>() :
                             interactableObjects[entityId].GetComponent<InteractableObject>();
                         // Entity entity = entities[myNetworkId].GetComponent<Entity>();
 
