@@ -12,20 +12,6 @@ namespace VersusFight
         private string ip = "127.0.0.1";
         private int port = 7777;
 
-        void Update()
-        {
-            if (udp == null || !isConnecting) return;
-
-            time += Time.deltaTime;
-
-            if (time >= networkInterval)
-            {
-                // 이동
-                MovePosition();
-                time = 0.0f;
-            }
-        }
-
         public override bool Connect(GameObject player, GameObject enemy)
         {
             // Initialize Prefab
@@ -83,6 +69,7 @@ namespace VersusFight
                         entities[myNetworkId] = Instantiate(playerObj
                                                     , new Vector3(0, 0.2f, 0)
                                                     , new Quaternion(0, 180f, 0, 1));
+                        entities[myNetworkId].GetComponent<Entity>().Info.NetworkId = myNetworkId;
 
                         // 자신의 위치 및 회전 정보를 서버에 전송함
                         packet.packetType = PacketType.Initialize; // 서버에게 초기화 요청
@@ -103,11 +90,14 @@ namespace VersusFight
                     case PacketType.Initialize:
                     {
                         MovePacket recvPacket = PacketSerializer.DeserializeMove(getPacket.data);
+                        int networkId = getPacket.networkId;
+
                         // 서버 플레이어의 오브젝트 생성
                         Vector3 enemyPos = GetObjectPosition(recvPacket);
                         Quaternion enemyRot = GetObjectRotation(recvPacket);
 
-                        entities[getPacket.networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
+                        entities[networkId] = Instantiate(enemyObj, enemyPos, enemyRot);
+                        entities[networkId].GetComponent<Entity>().Info.NetworkId = networkId;
                     }
                     break;
                     case PacketType.Move:
@@ -118,7 +108,13 @@ namespace VersusFight
                         Vector3 pos = new Vector3(recvPacket.x, recvPacket.y, recvPacket.z);
                         Quaternion rot = new Quaternion(recvPacket.rotX, recvPacket.rotY, recvPacket.rotZ, recvPacket.rotW);
 
-                        Enemy entity = entities[getPacket.networkId].GetComponent<Enemy>();
+                        int entityId = getPacket.networkId;
+                        EntityType entityType = getPacket.entityType;
+                        bool isPlayable = entityType == EntityType.PLAYABLE;
+
+                        Entity entity = isPlayable ?
+                            entities[myNetworkId].GetComponent<Entity>() :
+                            interactableObjects[entityId].GetComponent<InteractableObject>();
                         entity.Move(pos, rot);
                     }
                     break;
@@ -134,11 +130,15 @@ namespace VersusFight
                             entities[myNetworkId].GetComponent<Entity>() :
                             interactableObjects[entityId].GetComponent<InteractableObject>();
                         // Entity entity = entities[myNetworkId].GetComponent<Entity>();
+                        Debug.Log(entity.name);
 
                         Vector3 attackDir = new Vector3(recvPacket.knockbackDirectionX,
                                                         recvPacket.knockbackDirectionY,
                                                         recvPacket.knockbackDirectionZ);
-                        
+                        if (entity == null)
+                        {
+                            Debug.Log("[Hit] entity is null");
+                        }
                         entity.Hit(attackDir, recvPacket.attack, true);
                     }
                     break;
@@ -194,35 +194,12 @@ namespace VersusFight
             }
         }
 
-        // 위치 전달
-        private void MovePosition()
-        {
-            // Exception Handle
-            if (udp == null) return;
-
-            // 패킷 종류를 Move로 변경함
-            packet.packetType = PacketType.Move;
-
-            MovePacket movePacket = new MovePacket();
-
-            // 내 엔티티 ID를 저장함
-            packet.networkId = myNetworkId;
-            packet.entityType = EntityType.PLAYABLE;
-            // 현재 player의 위치와 회전 정보를 담음
-            SetObjectPositionAndRotation(ref movePacket, entities[myNetworkId]);
-
-            packet.data = PacketSerializer.SerializeMove(movePacket);
-
-            // 패킷을 전송함
-            SendPacket();
-        }
-
         // 패킷 전송
         private void SendPacket()
         {
             if (udp == null)
             {
-                Debug.LogError("udp is null");
+                Debug.LogWarning("udp is null");
                 return;
             }
 
@@ -234,7 +211,7 @@ namespace VersusFight
         {
             if (udp == null)
             {
-                Debug.LogError("udp is null");
+                Debug.LogWarning("udp is null");
                 return;
             }
 

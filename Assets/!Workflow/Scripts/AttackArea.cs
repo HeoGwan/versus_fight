@@ -42,7 +42,7 @@ public class AttackArea : MonoBehaviour
             attackDirectionY = attackAreaPos.y,
             attackDirectionZ = attackAreaPos.z,
 
-            attack = playerInfo.Attack
+            // attack = playerInfo.Attack
         };
         VNetworkManager.Instance.SendPacket(PacketType.Attack, EntityType.PLAYABLE,
                 PacketSerializer.SerializeAttack(attackPacket));

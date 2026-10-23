@@ -62,10 +62,7 @@ namespace VersusFight
         public float attackDirectionX;  // 4
         public float attackDirectionY;  // 4
         public float attackDirectionZ;  // 4
-
-        // 공격력
-        public float attack;            // 4
-    }; // 16 bytes
+    }; // 12 bytes
     public struct DisconnectPacket
     {
         // public int networkId;   // 4
@@ -78,7 +75,7 @@ namespace VersusFight
 
         private const uint MOVE_PACKET_SIZE = 28;
         private const uint HIT_PACKET_SIZE = 16;
-        private const uint ATTACK_PACKET_SIZE = 16;
+        private const uint ATTACK_PACKET_SIZE = 12;
         private const uint DISCONNECT_PACKET_SIZE = 1;
 
 
@@ -191,7 +188,7 @@ namespace VersusFight
             Buffer.BlockCopy(BitConverter.GetBytes(packet.attackDirectionY), 0, data, 4, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(packet.attackDirectionZ), 0, data, 8, 4);
 
-            Buffer.BlockCopy(BitConverter.GetBytes(packet.attack), 0, data, 12, 4);
+            // Buffer.BlockCopy(BitConverter.GetBytes(packet.attack), 0, data, 12, 4);
 
             return data;
         }
@@ -206,7 +203,7 @@ namespace VersusFight
                 attackDirectionY = BitConverter.ToSingle(data, 4),
                 attackDirectionZ = BitConverter.ToSingle(data, 8),
 
-                attack = BitConverter.ToSingle(data, 12),
+                // attack = BitConverter.ToSingle(data, 12),
             };
         }
 

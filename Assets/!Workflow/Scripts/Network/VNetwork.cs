@@ -30,8 +30,8 @@ namespace VersusFight
         protected GameObject enemyObj;
 
         // 자신을 포함한 모든 오브젝트 저장
-        protected GameObject[] entities;
-        protected GameObject[] interactableObjects;
+        [SerializeField] protected GameObject[] entities;
+        [SerializeField] protected GameObject[] interactableObjects;
 
 
         // Constructor

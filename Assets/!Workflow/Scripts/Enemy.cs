@@ -4,9 +4,9 @@ namespace VersusFight
 {
     public class Enemy : Entity
     {
-        private Vector3 targetPosition;
-        private Quaternion targetRotation;
-
+        Packet packet;
+        MovePacket movePacket;
+        
         protected override void Start()
         {
             base.Start();
@@ -17,28 +17,19 @@ namespace VersusFight
             entityType = EntityType.PLAYABLE;
         }
 
-        void Update()
+        protected override void Update()
         {
-            if (state == State.Move)
+            if (!VNetworkManager.Instance.IsConnect) return;
+
+            base.Update();
+
+            time += Time.deltaTime;
+
+            if (time >= networkInterval)
             {
-                transform.position = Vector3.Lerp(
-                    transform.position,
-                    targetPosition,
-                    walkSpeed * Time.deltaTime
-                );
-                
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation,
-                    targetRotation,
-                    walkSpeed * Time.deltaTime
-                );
-            }
-            else if (state == State.Hit)
-            {
-                if (rigid.linearVelocity == Vector3.zero)
-                {
-                    state = State.Idle;
-                }
+                // 이동
+                MovePosition();
+                time = 0.0f;
             }
         }
 
@@ -49,11 +40,37 @@ namespace VersusFight
             base.Hit(attackAreaPosition, attack, isReceive);
         }
 
-        public void Move(Vector3 position, Quaternion rotation)
+        // 위치 전달
+        private void MovePosition()
         {
-            if (state != State.Move) state = State.Move;
-            targetPosition = position;
-            targetRotation = rotation;
+            // // 패킷 종류를 Move로 변경함
+            // if (packet.packetType != PacketType.Move) packet.packetType = PacketType.Move;
+
+            // // 내 엔티티 ID를 저장함
+            // if (packet.networkId != info.NetworkId) packet.networkId = info.NetworkId;
+            // if (packet.entityType != EntityType.PLAYABLE) packet.entityType = EntityType.PLAYABLE;
+            // // 현재 player의 위치와 회전 정보를 담음
+            // SetObjectPositionAndRotation(ref movePacket, entities[myNetworkId]);
+
+            // packet.data = PacketSerializer.SerializeMove(movePacket);
+
+            // 패킷을 전송함
+            VNetworkManager.Instance.SendPacket(PacketType.Move, entityType,
+                        PacketSerializer.SerializeMove(movePacket));
+        }
+
+        protected void SetObjectPositionAndRotation(ref MovePacket packet, GameObject obj)
+        {
+            // 위치 정보
+            packet.x = obj.transform.position.x;
+            packet.y = obj.transform.position.y;
+            packet.z = obj.transform.position.z;
+
+            // 회전 정보
+            packet.rotX = obj.transform.rotation.x;
+            packet.rotY = obj.transform.rotation.y;
+            packet.rotZ = obj.transform.rotation.z;
+            packet.rotW = obj.transform.rotation.w;
         }
     }
 }

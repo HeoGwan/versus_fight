@@ -20,7 +20,7 @@ namespace VersusFight
             entityType = EntityType.OBJECTS;
         }
 
-        void Update()
+        protected override void Update()
         {
             // 연결되어있지 않으면 아무런 반응하지 않음
             if (!VNetworkManager.Instance.IsConnect) return;
@@ -52,8 +52,12 @@ namespace VersusFight
                 movePacket.rotZ = rot.z;
                 movePacket.rotW = rot.w;
 
-                VNetworkManager.Instance.SendPacket(PacketType.Move, EntityType.OBJECTS,
-                        PacketSerializer.SerializeMove(movePacket));
+                if (packet.packetType != PacketType.Move) packet.packetType = PacketType.Move;
+                if (packet.networkId != info.NetworkId) packet.networkId = info.NetworkId;
+                if (packet.entityType != EntityType.OBJECTS) packet.entityType = EntityType.OBJECTS;
+                packet.data = PacketSerializer.SerializeMove(movePacket);
+                
+                VNetworkManager.Instance.SendPacket(packet);
             }
         }
 
@@ -81,7 +85,7 @@ namespace VersusFight
             {
                 packetType = PacketType.Hit,
                 networkId = info.NetworkId, // 저장되어있는 id가 있는지 확인이 필요함
-                entityType = entityType,
+                entityType = EntityType.OBJECTS,
                 data = PacketSerializer.SerializeHit(hitPacket)
             };
 

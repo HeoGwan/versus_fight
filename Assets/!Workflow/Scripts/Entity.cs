@@ -31,6 +31,8 @@ namespace VersusFight
         // 네트워크 루프 간격
         protected float networkInterval = 1f / 30f;
         protected float time = 0.0f;
+        protected Vector3 targetPosition;
+        protected Quaternion targetRotation;
 
         [SerializeField] protected float knockbackForce = 1.5f; // 넉백 힘
         
@@ -53,6 +55,7 @@ namespace VersusFight
         [Space(10)]
         [SerializeField] protected EntityType entityType;
 
+
         protected virtual void Awake() {}
 
         protected virtual void Start()
@@ -64,14 +67,39 @@ namespace VersusFight
 
             if (hitParticle == null)
             {
-                Debug.LogError("not assigned hitParticle");
+                Debug.LogWarning("not assigned hitParticle");
             }
 
             if (animator == null)
             {
-                Debug.LogError("not assigned animator");
+                Debug.LogWarning("not assigned animator");
             }
             else animator.enabled = true;
+        }
+
+        protected virtual void Update()
+        {
+            if (state == State.Move)
+            {
+                transform.position = Vector3.Lerp(
+                    transform.position,
+                    targetPosition,
+                    walkSpeed * Time.deltaTime
+                );
+                
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRotation,
+                    walkSpeed * Time.deltaTime
+                );
+            }
+            else if (state == State.Hit)
+            {
+                if (rigid.linearVelocity == Vector3.zero)
+                {
+                    state = State.Idle;
+                }
+            }
         }
 
         void OnValidate()
@@ -119,6 +147,13 @@ namespace VersusFight
             };
             VNetworkManager.Instance.SendPacket(PacketType.Hit, entityType,
                     PacketSerializer.SerializeHit(hitPacket));
+        }
+
+        public void Move(Vector3 position, Quaternion rotation)
+        {
+            if (state != State.Move) state = State.Move;
+            targetPosition = position;
+            targetRotation = rotation;
         }
 
         // 무적 코루틴
