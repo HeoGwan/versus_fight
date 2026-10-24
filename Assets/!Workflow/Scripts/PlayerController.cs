@@ -249,34 +249,6 @@ namespace VersusFight
 
 
         // ======네트워크 함수======
-        protected override void NetworkLoop()
-        {
-            MoveNetwork();
-        }
-
-        private void MoveNetwork()
-        {
-            SetObjectPositionAndRotation(ref movePacket, transform);
-
-            // 패킷을 전송함
-            VNetworkManager.Instance.SendPacket(PacketType.Move, Info.NetworkId, entityType,
-                        PacketSerializer.SerializeMove(movePacket));
-        }
-
-        private void SetObjectPositionAndRotation(ref MovePacket packet, Transform obj)
-        {
-            // 위치 정보
-            packet.x = obj.position.x;
-            packet.y = obj.position.y;
-            packet.z = obj.position.z;
-
-            // 회전 정보
-            packet.rotX = obj.rotation.x;
-            packet.rotY = obj.rotation.y;
-            packet.rotZ = obj.rotation.z;
-            packet.rotW = obj.rotation.w;
-        }
-
         public override void Move(Vector3 position, Quaternion rotation) { }
         // ======네트워크 함수======
 

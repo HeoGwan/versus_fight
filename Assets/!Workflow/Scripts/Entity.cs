@@ -88,28 +88,7 @@ namespace VersusFight
 
         protected virtual void Update()
         {
-            if (state == State.Move)
-            {
-                transform.position = Vector3.Lerp(
-                    transform.position,
-                    targetPosition,
-                    walkSpeed * Time.deltaTime
-                );
-                
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation,
-                    targetRotation,
-                    walkSpeed * Time.deltaTime
-                );
-            }
-            else if (state == State.Hit)
-            {
-                if (rigid.linearVelocity == Vector3.zero)
-                {
-                    state = State.Idle;
-                }
-            }
-
+            MoveLerp();
 
             // 네트워크 루프 관련
             // 네트워크 연결이 안되어 있으면 무시
@@ -179,7 +158,64 @@ namespace VersusFight
 
 
         // ========네트워크 함수========
-        protected virtual void NetworkLoop() { }
+        protected virtual void NetworkLoop()
+        {
+            MoveNetwork();
+        }
+
+        protected virtual void MoveLerp()
+        {
+            if (state == State.Move)
+            {
+                transform.position = Vector3.Lerp(
+                    transform.position,
+                    targetPosition,
+                    walkSpeed * Time.deltaTime
+                );
+                
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRotation,
+                    walkSpeed * Time.deltaTime
+                );
+            }
+            else if (state == State.Hit)
+            {
+                if (rigid.linearVelocity == Vector3.zero)
+                {
+                    state = State.Idle;
+                }
+            }
+        }
+
+        protected void MoveNetwork()
+        {
+            SetObjectPositionAndRotation(ref movePacket, transform);
+
+            // Test
+            if (entityType == EntityType.OBJECTS)
+            {
+                Debug.Log($"id : {Info.NetworkId}, name: {name}");
+            }
+
+            // 패킷을 전송함
+            VNetworkManager.Instance.SendPacket(PacketType.Move, Info.NetworkId, entityType,
+                        PacketSerializer.SerializeMove(movePacket));
+        }
+
+        protected void SetObjectPositionAndRotation(ref MovePacket packet, Transform obj)
+        {
+            // 위치 정보
+            packet.x = obj.position.x;
+            packet.y = obj.position.y;
+            packet.z = obj.position.z;
+
+            // 회전 정보
+            packet.rotX = obj.rotation.x;
+            packet.rotY = obj.rotation.y;
+            packet.rotZ = obj.rotation.z;
+            packet.rotW = obj.rotation.w;
+        }
         // ========네트워크 함수========
 
 

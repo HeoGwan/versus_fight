@@ -124,12 +124,13 @@ namespace VersusFight
 
                         int entityId = getPacket.networkId;
                         EntityType entityType = getPacket.entityType;
-                        bool isPlayable = (entityType == EntityType.PLAYABLE);
+                        bool isPlayable = entityType == EntityType.PLAYABLE;
 
                         // 클라이언트에서는 상호작용 오브젝트도 패킷을 받아 진행함
                         Entity entity = isPlayable ?
                             entities[entityId].GetComponent<Entity>() :
                             interactableObjects[entityId].GetComponent<InteractableObject>();
+                        
                         entity.Move(pos, rot);
                     }
                     break;
