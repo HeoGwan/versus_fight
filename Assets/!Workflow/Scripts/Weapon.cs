@@ -13,6 +13,8 @@ namespace VersusFight
 
         public void EndAttack()
         {
+            if (playerController == null) return;
+            
             playerController.EndAttack();
         }
     }

@@ -229,7 +229,7 @@ namespace VersusFight
                             // entity.Hit(attackDir, recvPacket.attack);
                             
                             // 공격 애니메이션 진행
-                            // entity.Attack();
+                            entity.Attack();
 
                             // // 공격 정보를 전달함
                             // packet.packetType = PacketType.Attack;

@@ -10,6 +10,9 @@ namespace VersusFight
         Vector3 _direction = Vector3.zero;
         float velocity = 0.0f;
 
+        // 네트워크
+        private Packet attackPacket;
+
         [Header("Variables")]
         [SerializeField] float speed = 0.0f;
         float runTime = 0.0f;
@@ -65,6 +68,15 @@ namespace VersusFight
 
             // 엔티티 타입 설정
             entityType = EntityType.PLAYABLE;
+
+            // 패킷 설정
+            attackPacket = new Packet()
+            {
+                packetType = PacketType.Attack,
+                entityType = entityType,
+                networkId = -1,
+                data = new byte[1]
+            };
         }
 
         void LateUpdate()
@@ -179,9 +191,12 @@ namespace VersusFight
                 // 현재 공격 중임을 알리는 플래그 설정
                 isAttacking = true;
                 // 애니메이션 실행
-                animator.SetTrigger("Attack");
+                weaponAnimator.SetTrigger("Attack");
                 // 공격 범위 활성화
                 attackArea.enabled = true;
+                // 공격 패킷 전송
+                SendAttackPacket();
+                // 코루틴 시작
                 StartCoroutine(AttackCoroutine());
             }
         }
@@ -250,6 +265,11 @@ namespace VersusFight
 
         // ======네트워크 함수======
         public override void Move(Vector3 position, Quaternion rotation) { }
+        private void SendAttackPacket()
+        {
+            if (attackPacket.networkId != Info.NetworkId) attackPacket.networkId = Info.NetworkId;
+            VNetworkManager.Instance.SendPacket(attackPacket);
+        }
         // ======네트워크 함수======
 
 

@@ -177,7 +177,7 @@ namespace VersusFight
                         // entity.Hit(attackDir, recvPacket.attack);
 
                         // 공격 애니메이션 진행
-                        // entity.Attack();
+                        entity.Attack();
                     }
                     break;
                     case PacketType.Disconnect:

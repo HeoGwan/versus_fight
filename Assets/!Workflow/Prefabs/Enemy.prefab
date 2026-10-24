@@ -137,7 +137,7 @@ Transform:
   m_GameObject: {fileID: 957601957276695229}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.836, y: 0.983, z: 0}
+  m_LocalPosition: {x: 0.686, y: 0.983, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2693,6 +2693,7 @@ MonoBehaviour:
   invincibleDuration: 1
   walkSpeed: 5
   animator: {fileID: 3242934967026019546}
+  weaponAnimator: {fileID: 646444414177969589}
   hitParticle: {fileID: 4987733272517905954}
   _sceneId: GlobalObjectId_V1-0-00000000000000000000000000000000-0-0
   entityType: 0

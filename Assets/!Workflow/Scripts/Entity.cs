@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-
 using UnityEditor;
 using UnityEngine;
 
@@ -49,6 +48,7 @@ namespace VersusFight
 
         [Space(10)]
         [SerializeField] protected Animator animator;
+        [SerializeField] protected Animator weaponAnimator;
         [SerializeField] protected ParticleSystem hitParticle;
 
         [Space(10)]
@@ -79,6 +79,12 @@ namespace VersusFight
                 Debug.LogWarning("not assigned animator");
             }
             else animator.enabled = true;
+
+            if (weaponAnimator == null)
+            {
+                Debug.LogWarning("not assigned weapon animator");
+            }
+            else weaponAnimator.enabled = true;
         }
 
         protected virtual void Start()
@@ -154,6 +160,15 @@ namespace VersusFight
             if (state != State.Move) state = State.Move;
             targetPosition = position;
             targetRotation = rotation;
+        }
+
+        public void Attack()
+        {
+            if (weaponAnimator == null) return;
+            
+            // 공격 애니메이션 재생
+            if (weaponAnimator.HasParameter("Attack"))
+                weaponAnimator.SetTrigger("Attack");
         }
 
 

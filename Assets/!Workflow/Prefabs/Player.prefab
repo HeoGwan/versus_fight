@@ -339,7 +339,8 @@ MonoBehaviour:
   knockbackForce: 500
   invincibleDuration: 1
   walkSpeed: 5
-  animator: {fileID: 1375226560414492792}
+  animator: {fileID: 0}
+  weaponAnimator: {fileID: 1375226560414492792}
   hitParticle: {fileID: 2629093207024976661}
   _sceneId: GlobalObjectId_V1-0-00000000000000000000000000000000-0-0
   entityType: 0
